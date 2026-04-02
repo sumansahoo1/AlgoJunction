@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "es6",
+    "baseUrl": "src",
+    "paths": {
+      "@routes": ["src/routes/*"],
+      "@controllers": ["src/controllers/*"],
+      "@models": ["src/models/*"]
+    }
+  },
+  "include": ["src/**/*", "src/index.js"],
+  "exclude": ["node_modules"]
+}
