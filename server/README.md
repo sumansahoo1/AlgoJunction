@@ -57,4 +57,5 @@ pm2 start src/index.js --name ajbackend
 
 ## Related
 
-- Frontend: [`../AlgoJunction`](../AlgoJunction)
+- Frontend: [`../client`](../client)
+- Root README / deployment: [`../README.md`](../README.md)

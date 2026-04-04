@@ -48,8 +48,9 @@ yarn dev
 yarn build
 ```
 
-Artifacts are output to `dist/`. Deploy to Vercel by setting **Root Directory** to `AlgoJunction` and adding all `VITE_*` environment variables in the Vercel dashboard.
+Artifacts are output to `dist/`. Deploy to Vercel by setting **Root Directory** to `client` and adding all `VITE_*` environment variables in the Vercel dashboard.
 
 ## Related
 
-- Backend: [`../AJbackend`](../AJbackend)
+- Backend: [`../server`](../server)
+- Root README / deployment: [`../README.md`](../README.md)
