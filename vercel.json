@@ -1,5 +1,6 @@
 {
-    "buildCommand": "corepack enable && cd client && yarn build",
+    "installCommand": "corepack enable && cd client && yarn install --frozen-lockfile",
+    "buildCommand": "cd client && yarn build",
     "outputDirectory": "client/dist",
     "routes": [
         {
