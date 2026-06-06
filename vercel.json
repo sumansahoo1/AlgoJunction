@@ -1,5 +1,5 @@
 {
-    "buildCommand": "cd client && yarn build",
+    "buildCommand": "corepack enable && cd client && yarn build",
     "outputDirectory": "client/dist",
     "routes": [
         {
