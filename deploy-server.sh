@@ -30,7 +30,7 @@ yarn install --frozen-lockfile
 if command -v pm2 &>/dev/null; then
   echo "==> Starting server with PM2..."
   pm2 delete algojunction-server 2>/dev/null || true
-  pm2 start src/index.js --name algojunction-server --interpreter node
+  pm2 start ecosystem.config.js
   pm2 save
   echo "==> Server running via PM2. Use 'pm2 logs algojunction-server' to tail logs."
 else
