@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   apps: [
     {
       name: 'algojunction-server',
@@ -10,4 +10,4 @@ export default {
       },
     },
   ],
-}
+};
