@@ -14,6 +14,10 @@ if ! command -v docker &>/dev/null; then
   exit 1
 fi
 
+# ── pre-build Java execution image ────────────────────────────────────────────
+echo "==> Building Java execution Docker image..."
+docker build -t algojunction-java-executor "$SERVER_DIR/src/docker"
+
 # ── env check ─────────────────────────────────────────────────────────────────
 if [ ! -f "$SERVER_DIR/.env" ]; then
   echo "ERROR: server/.env not found."

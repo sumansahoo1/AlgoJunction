@@ -1,21 +1,15 @@
 import { exec } from 'child_process';
-import path from 'path';
 import fs from 'fs/promises';
+import path from 'path';
 
 import { questions } from '../db/data.js';
 import { addOrUpdateUser, insertNew } from '../db/mongooseClient.js';
-
-
-const currDirectory = process.cwd();
-const codeDirectory = path.join(currDirectory, "/src/execute/");
-const inputDirectory = path.join(currDirectory, "/src/inputs/");
-const dockerfile = path.join(currDirectory, "/src/docker/Dockerfile");
 
 const executeCommand = (command) => {
     return new Promise((resolve, reject) => {
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                reject(stderr);
+                reject(stderr || stdout);
             } else {
                 resolve(stdout);
             }
@@ -37,28 +31,21 @@ export const runJava = async (req, res) => {
         return res.status(400).json({ error: 'Missing or invalid question id in the request body' });
     }
 
-    const javaFileName = 'Solution.java';
-    const javaFilePath = path.join(codeDirectory, javaFileName);
+    const tempDir = path.join(process.cwd(), 'tmp', `algojunction-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    const inputsDir = path.join(tempDir, 'inputs');
 
     try {
-        await fs.writeFile(javaFilePath, javaCode, 'utf-8');
-    } catch (writeError) {
-        console.log(`${new Date().toLocaleString()}: Code run failed with error: ${writeError}`);
-        return res.status(500).json({ error: writeError.message });
-    }
+        await fs.mkdir(inputsDir, { recursive: true });
+        await fs.writeFile(path.join(tempDir, 'Solution.java'), javaCode, 'utf-8');
 
+        for (const ques of questions) {
+            if (ques.id == quesid) {
 
-    for (const ques of questions) {
-        if (ques.id == quesid) {
-            try {
-                await executeCommand(`docker build -t your-image-name -f ${dockerfile} .`);
-                console.log(`${new Date().toLocaleString()}: Image build done`);
-
-                // running the code for each input/Dockerfile
+                // running the code for each input
                 for (const [index, { input }] of ques.inputs.entries()) {
 
                     // copying the input to input file
-                    const inputFilePath = path.join(inputDirectory, 'input.txt');
+                    const inputFilePath = path.join(inputsDir, 'input.txt');
                     try {
                         await fs.writeFile(inputFilePath, input, 'utf-8');
                     } catch (writeError) {
@@ -67,9 +54,11 @@ export const runJava = async (req, res) => {
                         continue;
                     }
 
-                    // running the code with input
+                    // compile and run the code with input in pre-built image
                     try {
-                        output = await executeCommand(`docker run -v ${inputDirectory}:/app/inputs -w /app --rm your-image-name`);
+                        output = await executeCommand(
+                            `docker run --rm --network none -v ${tempDir}:/app -w /app algojunction-java-executor sh -c "javac Solution.java 2>&1 && java Solution"`
+                        );
                         console.log(`${new Date().toLocaleString()}: Code run done`);
                         result.push({ index, output, error: null, success: true });
 
@@ -91,29 +80,28 @@ export const runJava = async (req, res) => {
 
                 await handleDatabaseUpdates(data);
 
-
-            } catch (error) {
-                console.log(`${new Date().toLocaleString()}: docker image build failed with error: ${error}`);
-                result.push({ index: null, output: null, error, success: false, builderror: true });
-
-                const data = {
-                    username,
-                    quesid,
-                    javaCode,
-                    language: 'java',
-                    status: { status: 'failed', output: null, error },
-                    result,
-                    email
-                }
-
-               await handleDatabaseUpdates(data);
-
-            } finally {
-                await executeCommand(`docker rmi your-image-name`).catch(() => { });
-                console.log(`${new Date().toLocaleString()}: Image removed`);
             }
         }
+
+    } catch (error) {
+        console.log(`${new Date().toLocaleString()}: Code execution failed with error: ${error}`);
+        // fallback DB save on unexpected errors
+        const data = {
+            username,
+            quesid,
+            javaCode,
+            language: 'java',
+            status: { status: 'failed', output: null, error: error.message || String(error) },
+            result,
+            email
+        }
+        await handleDatabaseUpdates(data);
+
+    } finally {
+        await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
+        console.log(`${new Date().toLocaleString()}: Temp directory cleaned up`);
     }
+
     res.json(result);
 };
 

@@ -1,29 +1,32 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
-import java.io.*;
-
-class Solution {
-    public int romanToInt(String s) {
-        // Your code goes here
-        
-        return 0;
-    }
-    public static void main(String[] args) {
-        Solution solution = new Solution();
-
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            String line;
-            while ((line = br.readLine()) != null) {
-                // Remove any surrounding quotes from the input
-                String input = line.replaceAll("^"|"$", "");
-                int result = solution.romanToInt(input);
+    import java.io.*;
+    
+    class Solution {
+        // Function to find the length of the longest substring without repeating characters
+        public int lengthOfLongestSubstring(String s) {
+            // Write your code here
+    
+            return 5;
+        }
+    
+        public static void main(String[] args) {
+            Solution solution = new Solution();
+    
+            try {
+                FileInputStream fileInputStream = new FileInputStream("./inputs/input.txt");
+                Scanner scanner = new Scanner(fileInputStream);
+    
+                String input = scanner.next();
+    
+                int result = solution.lengthOfLongestSubstring(input);
+    
                 System.out.println(result);
+    
+                // Close the scanner
+                scanner.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
-}
+    
