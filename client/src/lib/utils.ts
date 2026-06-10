@@ -10,9 +10,17 @@ export interface Example {
   output: string;
 }
 
+export interface TestCaseResult {
+  input: string;
+  output: string | null;
+  error: string | null;
+  success: boolean;
+}
+
 interface Submission {
   submitted: boolean;
-  cases: Example[];
+  code: string;
+  cases: TestCaseResult[];
 }
 
 export interface Question {

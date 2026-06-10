@@ -224,7 +224,7 @@ User clicks "Run" in Console
         │
         ├─ 3d. Capture stdout, stderr
         │
-        └─ 3e. Collect: { input, output, error, builderror }
+        └─ 3e. Collect: { index, output, error, success }
         │
         ▼
 4. Save submission to MongoDB:

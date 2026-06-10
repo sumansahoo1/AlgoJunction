@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import { Question } from '@/lib/utils';
+import { Question, TestCaseResult } from '@/lib/utils';
 
 export interface queslistState {
   value: Question[];
@@ -21,7 +21,7 @@ export const questionsSlice = createSlice({
         value: [...state.value, action.payload],
       };
     },
-    addSubmission: (state, action: PayloadAction<{id: number, code: string, cases: { input: string; output: string }[] }>) => {
+    addSubmission: (state, action: PayloadAction<{id: number, code: string, cases: TestCaseResult[] }>) => {
       return {
         ...state,
         value: state.value.map((question) => {

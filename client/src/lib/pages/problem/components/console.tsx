@@ -19,6 +19,7 @@ import { addSubmission } from "@/lib/features/questions/questions";
 import { RootState } from "@/store";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { TestCaseResult } from "@/lib/utils";
 
 
 export const Console = () => {
@@ -53,6 +54,7 @@ export const Console = () => {
   const [height, setHeight] = useState(smallHeight);
   const [caseno, setCaseno] = useState(0);
   const [running, setRunning] = useState(false);
+  const [compilationError, setCompilationError] = useState<string | null>(null);
 
   const toggleHeight = () => {
     setHeight(height === smallHeight ? largeHeight : smallHeight);
@@ -62,7 +64,6 @@ export const Console = () => {
 
     setRunning(true);
     setHeight(largeHeight);
-
 
     try {
       const response = await axios.post(
@@ -75,29 +76,31 @@ export const Console = () => {
         }
       );
 
-      if (response.data[0].builderror) {
-        dispatch(addSubmission(
-          {
-            id: Number(question?.id),
-            code: question?.code ?? "",
-            cases: response.data.map((data: { input: string; output: string; }) =>
-              ({ input: data.input, output: "Compilation error" })),
-          }
-        ));
-        setRunning(false);
-        return;
-      } else {
-        dispatch(addSubmission(
-          {
-            id: Number(question?.id),
-            code: question?.code ?? "",
-            cases: response.data,
-          }
-        ));
-        setRunning(false);
-      }
+      const rawResults: Array<{ index: number; output: string | null; error: string | null; success: boolean }> = response.data;
+
+      // Map backend results to TestCaseResult, enriching with input from question examples
+      const cases: TestCaseResult[] = rawResults.map((item) => ({
+        input: question?.examples[item.index]?.input ?? "",
+        output: item.output,
+        error: item.error,
+        success: item.success,
+      }));
+
+      // Detect compilation error: all cases failed with the same non-null error
+      const allSameError = rawResults.length > 0 &&
+        rawResults.every((r) => r.error !== null && r.error === rawResults[0].error);
+      setCompilationError(allSameError ? rawResults[0].error : null);
+
+      dispatch(addSubmission({
+        id: Number(question?.id),
+        code: localStorage.getItem(String(id)) ?? question?.code ?? "",
+        cases,
+      }));
+
+      setRunning(false);
     } catch (error) {
       console.error("Error running code:", error);
+      setRunning(false);
     }
   };
 
@@ -150,6 +153,14 @@ export const Console = () => {
 
           {height === largeHeight ? (
             <div className="mt-2 overflow-auto w-full">
+              {compilationError && (
+                <div className="w-full bg-red-50 border border-red-300 rounded-md p-3 mb-2">
+                  <p className="text-red-700 font-semibold text-sm">Compilation Error</p>
+                  <pre className="text-red-600 text-xs mt-1 whitespace-pre-wrap break-all">
+                    {compilationError}
+                  </pre>
+                </div>
+              )}
               <Tabs defaultValue="account" className="">
                 <div className="flex justify-between items-center ">
                   <TabsList className="flex gap-3 w-fit">
@@ -169,14 +180,13 @@ export const Console = () => {
                   <div className="px-10">
                     {question?.submission &&
                       !running &&
-                      height === largeHeight && caseno ?
-                      (question.submission.cases !== null &&
-                        String(question.examples[Number(caseno) - 1].output).trim() ===
-                        String(question.submission.cases[Number(caseno) - 1].output).trim() ? (
-                        <CheckCircle2 className="text-green-400" />
-                      ) : (
-                        <XCircle className="text-red-400" />
-                      )) : null}
+                      height === largeHeight && caseno ? (
+                        question.submission.cases[Number(caseno) - 1]?.success ? (
+                          <CheckCircle2 className="text-green-400" />
+                        ) : (
+                          <XCircle className="text-red-400" />
+                        )
+                      ) : null}
                   </div>
                 </div>
 
@@ -203,9 +213,24 @@ export const Console = () => {
                             <Label htmlFor="output" className="font-semibold">
                               Output
                             </Label>
-                            <p className="text-gray-600 font-medium">
-                              {question?.submission.cases[Number(caseno) - 1].output ?? ""}
-                            </p>
+                            {(() => {
+                              const caseResult = question.submission.cases[Number(caseno) - 1];
+                              if (caseResult?.error) {
+                                return (
+                                  <div className="bg-red-50 border border-red-200 rounded p-2 mt-1">
+                                    <p className="text-red-700 text-xs font-medium">Error</p>
+                                    <pre className="text-red-600 text-xs mt-0.5 whitespace-pre-wrap break-all">
+                                      {caseResult.error}
+                                    </pre>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <p className="text-gray-600 font-medium">
+                                  {caseResult?.output ?? ""}
+                                </p>
+                              );
+                            })()}
                           </div>
                         }
                       </CardContent>
