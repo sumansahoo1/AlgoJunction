@@ -9,7 +9,7 @@ const executeCommand = (command) => {
     return new Promise((resolve, reject) => {
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                reject(stderr || stdout);
+                reject({ message: stderr || stdout || error.message, code: error.code });
             } else {
                 resolve(stdout);
             }
@@ -57,14 +57,19 @@ export const runJava = async (req, res) => {
                     // compile and run the code with input in pre-built image
                     try {
                         output = await executeCommand(
-                            `docker run --rm --network none -v ${tempDir}:/app -w /app algojunction-java-executor sh -c "javac Solution.java 2>&1 && java Solution"`
+                            `docker run --rm --network none --cpus="0.5" --memory="512m" --memory-swap="512m" --pids-limit="64" --read-only --tmpfs /tmp:rw,noexec,nosuid,size=128m --cap-drop=ALL --security-opt=no-new-privileges:true --ulimit nproc=64:64 --ulimit nofile=256:256 --ulimit fsize=104857600 --ulimit core=0:0 -v ${tempDir}:/app -w /app algojunction-java-executor sh -c "javac Solution.java 2>&1 && timeout --signal=KILL 10s java Solution"`
                         );
                         console.log(`${new Date().toLocaleString()}: Code run done`);
                         result.push({ index, output, error: null, success: true });
 
                     } catch (error) {
-                        console.log(`${new Date().toLocaleString()}: Code run failed with error: ${error}`);
-                        result.push({ index, output: null, error, success: false });
+                        const exitCode = error?.code;
+                        const errMsg = error?.message || error;
+                        const userError = exitCode === 124 ? 'Time Limit Exceeded' :
+                                          exitCode === 137 ? 'Memory Limit Exceeded' :
+                                          errMsg;
+                        console.log(`${new Date().toLocaleString()}: Code run failed with error: ${errMsg} (exit code: ${exitCode})`);
+                        result.push({ index, output: null, error: userError, success: false });
                     }
                 }
 
@@ -84,14 +89,15 @@ export const runJava = async (req, res) => {
         }
 
     } catch (error) {
-        console.log(`${new Date().toLocaleString()}: Code execution failed with error: ${error}`);
+        const errMsg = error?.message || String(error);
+        console.log(`${new Date().toLocaleString()}: Code execution failed with error: ${errMsg}`);
         // fallback DB save on unexpected errors
         const data = {
             username,
             quesid,
             javaCode,
             language: 'java',
-            status: { status: 'failed', output: null, error: error.message || String(error) },
+            status: { status: 'failed', output: null, error: errMsg },
             result,
             email
         }
