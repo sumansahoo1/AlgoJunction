@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: client/yarn.lock
+
+      - run: |
+          corepack enable
+          yarn install --frozen-lockfile
+
+      - run: yarn lint
+
+      - run: yarn tsc
+
+      - run: yarn build
+
+  server-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: server/yarn.lock
+
+      - run: |
+          corepack enable
+          yarn install --frozen-lockfile
+
+      - run: yarn lint
+
+  server-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: server/yarn.lock
+
+      - run: |
+          corepack enable
+          yarn install --frozen-lockfile
+
+      - name: Syntax check
+        run: find src -name '*.js' -exec node --check {} \;
+
+      - name: Import resolution check
+        run: node -e "import('./src/routes/routes.js')"
+
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Java executor Docker image
+        run: docker build -t algojunction-java-executor server/src/docker
