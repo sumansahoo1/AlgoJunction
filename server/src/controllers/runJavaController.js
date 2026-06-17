@@ -37,6 +37,7 @@ export const runJava = async (req, res) => {
     try {
         await fs.mkdir(inputsDir, { recursive: true });
         await fs.writeFile(path.join(tempDir, 'Solution.java'), javaCode, 'utf-8');
+        await fs.chmod(tempDir, 0o777);
 
         for (const ques of questions) {
             if (ques.id == quesid) {
