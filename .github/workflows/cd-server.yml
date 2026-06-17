@@ -1,0 +1,51 @@
+name: Deploy Server
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Oracle VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+
+            REPO_DIR="/home/ubuntu/myprojects/AlgoJunction"
+
+            echo "==> Pulling latest changes..."
+            OLD_HEAD=$(git -C "$REPO_DIR" rev-parse HEAD)
+            git -C "$REPO_DIR" pull origin main
+
+            echo "==> Checking if nginx config changed..."
+            NGINX_CHANGED=$(git -C "$REPO_DIR" diff --name-only "$OLD_HEAD" HEAD -- server/nginx/algojunction.conf | wc -l)
+
+            echo "==> Enabling corepack and installing dependencies..."
+            cd "$REPO_DIR/server"
+            corepack enable
+            yarn install --frozen-lockfile
+
+            echo "==> Building Java executor Docker image..."
+            docker build -t algojunction-java-executor "$REPO_DIR/server/src/docker"
+
+            echo "==> Restarting server with PM2..."
+            pm2 delete algojunction-server 2>/dev/null || true
+            pm2 start "$REPO_DIR/server/ecosystem.config.cjs"
+            pm2 save
+
+            if [ "$NGINX_CHANGED" -gt 0 ]; then
+              echo "==> Nginx config changed, reloading..."
+              sudo nginx -t && sudo systemctl reload nginx
+            fi
+
+            echo "==> Deploy complete."
