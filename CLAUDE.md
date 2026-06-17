@@ -19,7 +19,7 @@ AlgoJunction is a LeetCode-style DSA practice platform where users solve coding 
 | **State** | Redux Toolkit |
 | **Backend** | Node.js 18+ (ESM), Express.js |
 | **Database** | MongoDB Atlas + Mongoose ODM |
-| **Code Execution** | Docker (OpenJDK 11), sandboxed |
+| **Code Execution** | Docker (Eclipse Temurin 11 JDK), sandboxed |
 | **Charts** | Chart.js, @uiw/react-heat-map |
 | **Frontend Hosting** | Vercel |
 | **Backend Hosting** | Linux VM |
@@ -54,16 +54,19 @@ AlgoJunction/
 │   │   ├── controllers/             # questionsController, runJavaController, profileController
 │   │   ├── db/
 │   │   │   ├── connectDb.js         # MongoDB connection
-│   │   │   ├── data.js              # Problem seed data (100+ problems)
-│   │   │   ├── mongooseClient.js    # Mongoose schemas + models
-│   │   │   ├── schema/dbSchema.js   # DB schema definitions
-│   │   │   └── utils/formatDate.js  # Date formatting helpers
-│   │   ├── docker/Dockerfile        # OpenJDK 11 Docker image for code execution
-│   │   ├── execute/                 # Java compilation & execution logic
-│   │   ├── inputs/input.txt         # Test input files
-│   │   └── scripts/                 # dbTransactions, populateUsers, showUsers
+│   │   │   ├── data.js              # Problem seed data (4 problems)
+│   │   │   ├── mongooseClient.js    # Mongoose CRUD operations
+│   │   │   ├── schema/dbSchema.js    # DB schema definitions
+│   │   │   └── utils/formatDate.js   # Date formatting helpers
+│   │   ├── docker/Dockerfile         # Eclipse Temurin 11 JDK image for code execution
+│   │   ├── execute/                  # Solution.java written per execution
+│   │   ├── inputs/input.txt          # Test input written per test case
+│   │   └── scripts/                 # dbTransactions seed/test script
 │   ├── .env.example
-│   └── package.json                 # Yarn
+│   ├── package.json                 # Yarn
+│   ├── ecosystem.config.cjs         # PM2 config
+│   └── nginx/
+│       └── algojunction.conf        # Nginx reverse proxy config
 │
 ├── deploy-client.sh                 # Vercel deployment
 ├── deploy-server.sh                 # VM deployment (PM2)
@@ -94,6 +97,7 @@ AlgoJunction/
 cd server
 yarn install          # Install deps
 yarn start            # Start with nodemon (port 3000)
+yarn lint             # ESLint (src/ --ext .js)
 ```
 
 ### Frontend (client/)
@@ -143,7 +147,7 @@ VITE_FIREBASE_APP_ID=...
 - **Routing**: React Router v6 with `createBrowserRouter`.
 - **State**: Redux Toolkit with slices in `client/src/lib/features/`.
 - **API calls**: axios.
-- **Code execution**: Java only currently (OpenJDK 11 in Docker). C++ and Python planned.
+- **Code execution**: Java only currently (Eclipse Temurin 11 in Docker). C++ and Python planned. Pre-built image, code volume-mounted at runtime.
 - **Git**: Standard feature branch workflow (`feature/your-feature`).
 
 ---
@@ -151,7 +155,8 @@ VITE_FIREBASE_APP_ID=...
 ## Key Notes
 
 - The Docker sandbox for Java execution is essential — do not modify execution paths without testing container isolation.
+- The pre-built Docker image (`algojunction-java-executor`) contains only the JDK. User code is volume-mounted at runtime.
 - Firebase is initialized in `App.tsx` using VITE_* env vars.
 - Deployment scripts are at the repo root and handle all steps (install, build, deploy).
 - Server uses nodemon for auto-reload in development.
-- File `server/src/execute/Solution.java` is the compiled Java entry point — modifications here affect how user code runs.
+- File `server/src/execute/Solution.java` is overwritten per execution with user-submitted code — don't store permanent code there.

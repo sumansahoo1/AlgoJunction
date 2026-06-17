@@ -42,14 +42,15 @@ This document describes the system architecture, data flow, and key design decis
 │                           │                                          │
 │             ┌─────────────┴─────────────┐                            │
 │             ▼                           ▼                            │
-│  ┌──────────────────┐      ┌──────────────────────┐                 │
-│  │  MongoDB Atlas    │      │  Docker (OpenJDK 11) │                 │
-│  │  Database:        │      │  Sandboxed Java      │                 │
-│  │  algojunction     │      │  Execution           │                 │
-│  │  ─ users          │      │                      │                 │
-│  │  ─ submissions    │      │  Build → Run →       │                 │
-│  │                   │      │  Capture stdout      │                 │
-│  └──────────────────┘      └──────────────────────┘                 │
+│  ┌──────────────────┐      ┌────────────────────────┐                 │
+│  │  MongoDB Atlas    │      │  Docker                │                 │
+│  │  Database:        │      │  (Eclipse Temurin 11)  │                 │
+│  │  algojunction     │      │  Sandboxed Java         │                 │
+│  │  ─ users          │      │  Execution              │                 │
+│  │  ─ submissions    │      │                         │                 │
+│  │                   │      │  javac → timeout java →  │                 │
+│  │                   │      │  Capture stdout         │                 │
+│  └──────────────────┘      └────────────────────────┘                 │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -182,7 +183,7 @@ Database: `algojunction` (`server/src/db/schema/dbSchema.js`)
 
 ### 3.4 Problem Data Source
 
-Problems are stored in `server/src/db/data.js` as a static array of ~100+ questions. Each question contains:
+Problems are stored in `server/src/db/data.js` as a static array of questions. Each question contains:
 - `id`, `qName`, `qDifficulty`, `qDescription`, `qAssumptions`
 - `examples[]` (display-friendly I/O for the UI)
 - `inputs[]` (raw test inputs consumed by the Docker-executed Java code)
@@ -190,13 +191,32 @@ Problems are stored in `server/src/db/data.js` as a static array of ~100+ questi
 
 This means:
 - Problem data does NOT go through MongoDB — it's served directly from memory
-- The same seed file is used in `dbTransactions.js` for populating the DB
+- To add new problems, edit `data.js` and restart the server
 
 ---
 
 ## 4. Code Execution Pipeline (Docker Sandbox)
 
-This is the most architecturally significant subsystem. The entire flow:
+This is the most architecturally significant subsystem. The entire flow uses a **pre-built Docker image** with **volume-mounted** code — no image rebuild per submission.
+
+### 4.1 Pre-Built Docker Image
+
+The image is built once from `server/src/docker/Dockerfile`:
+
+```dockerfile
+FROM eclipse-temurin:11-jdk
+RUN groupadd -r runner && useradd -r -g runner runner
+USER runner
+WORKDIR /app
+```
+
+Key properties:
+- Eclipse Temurin 11 JDK (not OpenJDK)
+- Runs as non-root `runner` user for security
+- No application code baked into the image — code is volume-mounted at runtime
+- Built once via `docker build -t algojunction-java-executor server/src/docker`
+
+### 4.2 Execution Flow
 
 ```
 User clicks "Run" in Console
@@ -205,47 +225,64 @@ User clicks "Run" in Console
 1. POST /run-java  { quesid, javaCode, username, email }
         │
         ▼
-2. Write javaCode → server/src/execute/Solution.java  (overwrites previous)
+2. Create temp dir: tmp/algojunction-{timestamp}-{random}
+   └─ Create subdirectory: tmp/.../inputs/
         │
         ▼
-3. For each test case in questions[quesid].inputs[]:
+3. Write user's javaCode → tmp/.../Solution.java
         │
-        ├─ 3a. Write raw input string → server/src/inputs/input.txt
+        ▼
+4. For each test case in questions[quesid].inputs[]:
         │
-        ├─ 3b. docker build -t your-image-name -f Dockerfile .
-        │       Dockerfile: FROM openjdk:11
-        │                   COPY Solution.java /app/
-        │                   RUN javac Solution.java
-        │                   CMD ["java", "-cp", "/app", "Solution"]
+        ├─ 4a. Write raw input → tmp/.../inputs/input.txt
         │
-        ├─ 3c. docker run --rm -v inputs:/app/inputs your-image-name
-        │       Solution.java reads from ./inputs/input.txt via Scanner
+        ├─ 4b. docker run --rm (pre-built algojunction-java-executor image)
+        │       Volume mount: -v tmp/.../:/app
+        │       Working dir: -w /app
+        │       Command: sh -c "javac Solution.java 2>&1 && timeout --signal=KILL 10s java Solution"
+        │       Resource limits:
+        │         --cpus="0.5" --memory="512m" --memory-swap="512m"
+        │         --pids-limit="64" --read-only
+        │         --tmpfs /tmp:rw,noexec,nosuid,size=128m
+        │         --network none
+        │         --cap-drop=ALL --security-opt=no-new-privileges:true
+        │         --ulimit nproc=64:64 --ulimit nofile=256:256
+        │
+        ├─ 4c. Solution.java reads ./inputs/input.txt via Scanner
         │       Outputs result to stdout
         │
-        ├─ 3d. Capture stdout, stderr
+        ├─ 4d. Capture stdout, stderr
         │
-        └─ 3e. Collect: { index, output, error, success }
+        └─ 4e. Exit code mapping:
+                124 → "Time Limit Exceeded"
+                137 → "Memory Limit Exceeded"
+                Other → stderr/stdout message
         │
         ▼
-4. Save submission to MongoDB:
+5. Save submission to MongoDB:
         ├─ insertNew() → creates Submission document
         └─ addOrUpdateUser() → appends submission ID to user.submissions[]
         │
         ▼
-5. Return array of test case results to frontend
+6. Cleanup: await fs.rm(tempDir, { recursive: true, force: true })
         │
         ▼
-6. Console renders each case:
+7. Return array of test case results to frontend
+        │
+        ▼
+8. Console renders each case:
         ├─ Green checkmark if output matches expected
         └─ Red X if it doesn't
+        └─ Red compilation error banner if all cases share the same error
 ```
 
-### Key characteristics:
+### 4.3 Key Design Decisions
 
-- **Not production-ready**: The Docker image is rebuilt for every test case (3b inside the loop). This is slow — each iteration rebuilds the entire image even though only `input.txt` changes. A production version would compile once and run the container multiple times with different input volumes.
-- **No container cleanup**: `docker run` without `--rm` would accumulate stopped containers. The code does not include cleanup logic.
-- **Overwrite vulnerability**: `Solution.java` is written to the host filesystem from user-submitted code, then baked into the Docker image. While Docker provides some isolation at runtime, the host write is a risk surface.
-- **Auth**: The `/run-java` route accepts any `username`/`email` from the request body — there is no server-side token validation.
+- **Single pre-built image**: The Docker image contains only the JDK, not the user's code. Code is injected via volume mount at runtime — no image rebuild per test case.
+- **Compilation per test case**: `javac` runs inside the container for each test case (since the code may change between runs). This adds ~1-2s per case but avoids caching stale `.class` files.
+- **`--rm` flag**: Containers are auto-removed after execution — no accumulation of stopped containers.
+- **Security hardening**: No network access, read-only root filesystem, dropped Linux capabilities, PID and process limits, memory and CPU caps, 10-second hard timeout.
+- **Temp directory lifecycle**: Created per request, cleaned up in `finally` block even if execution fails. Uses randomized directory names to avoid collisions.
 
 ---
 
@@ -306,10 +343,11 @@ Vite config: Root directory is `client/`, all `VITE_*` env vars configured in Ve
 
 `deploy-server.sh`:
 1. Check Docker is installed (required for code execution)
-2. Check `server/.env` exists
-3. `yarn install --frozen-lockfile`
-4. Start via PM2 (`pm2 start src/index.js --name algojunction-server`)
-5. PM2 saves process list for auto-restart on reboot
+2. Pre-build Java executor image: `docker build -t algojunction-java-executor server/src/docker`
+3. Check `server/.env` exists
+4. `yarn install --frozen-lockfile`
+5. Start via PM2 (`pm2 delete algojunction-server || true`, then `pm2 start ecosystem.config.cjs`, then `pm2 save`)
+6. Falls back to `node src/index.js` if PM2 is not installed
 
 **Prerequisites on VM**: Node.js 18+, Docker, PM2.
 
@@ -349,7 +387,7 @@ POST /run-java (backend)
         │
         ├─ Run all test cases via Docker
         │
-        ├─ insertNew(userId, questionId, code, lang, result, testCaseResults)
+        ├─ insertNew(username, quesid, javaCode, language, result, testCaseResults)
         │   └─ Creates Submission document in MongoDB
         │
         └─ addOrUpdateUser(username, email, submissionId)
@@ -365,12 +403,12 @@ POST /run-java (backend)
 | Decision | Rationale | Trade-off |
 |---|---|---|
 | **Problems in static JS array** (`data.js`) | Fast, no DB round-trip, simple to edit | Requires server restart to add/modify problems; won't scale to user-generated problems |
-| **Docker rebuild per test case** | Simple implementation | ~10-15s per test case; wasteful rebuild of same image |
+| **Pre-built Docker image + volume mount** | No image rebuild per test case; fast execution | User code written to host filesystem (risk surface); compilation still per-case |
 | **localStorage for auth tokens** | No auth library needed, simple | Not secure; any XSS exposes tokens; backend doesn't verify Firebase token |
 | **Firebase Admin SDK not used server-side** | Keeps backend simple | Backend trusts client-provided username/email without verification |
 | **MongoDB Atlas (M0 free tier)** | Zero ops, free | 512MB storage limit, shared vCPU, throttled under load |
 | **Vite + Vercel** | Fast builds, generous free tier, zero-config deployment | Vercel serverless functions not used (backend is separate VM) |
-| **CodeMirror 6** | Extensible, lightweight, good syntax highlighting | No built-in AI autocomplete; custom keybindings require manual setup |
+| **CodeMirror 6 (Java only)** | Extensible, lightweight, good syntax highlighting | C++/Python disabled in UI; no AI autocomplete |
 | **PM2 on VM** | Simple process management, auto-restart | No container orchestration; scaling requires manual work |
 | **react-resizable-panels** | Professional split-pane layout | Added dependency; mobile UX needs separate consideration |
 
@@ -379,9 +417,8 @@ POST /run-java (backend)
 ## 9. Future Considerations
 
 - **Token validation server-side**: Verify Firebase ID tokens on `/run-java` and `/profile` using Firebase Admin SDK for proper auth.
-- **Docker optimization**: Compile once, run many — mount `input.txt` as a volume instead of rebuilding the image per test case.
+- **Docker optimization**: Compile once per submission, run container multiple times with different input volumes — avoid recompiling per test case.
 - **C++/Python support**: Language selection is already wired in the editor dropdown (disabled). Would need Docker images for each language.
 - **Database-backed problems**: Migrate from `data.js` to MongoDB for dynamic problem management.
 - **WebSocket for execution logs**: Stream real-time execution output instead of waiting for the full pipeline to finish.
-- **Rate limiting**: Protect `/run-java` from abuse (expensive Docker builds).
-- **Automated tests for correctness**: Parse and compare stdout against expected outputs more robustly.
+- **Rate limiting**: Protect `/run-java` from abuse (expensive Docker runs).

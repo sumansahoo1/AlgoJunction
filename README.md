@@ -33,15 +33,16 @@
 ## Features
 
 ### 🎯 **Comprehensive Problem Library**
-- Browse 100+ carefully curated DSA problems across multiple difficulty levels
-- Problems categorized by topic (Arrays, Trees, Graphs, Dynamic Programming, etc.)
+- Browse curated DSA problems across multiple difficulty levels
 - Detailed problem descriptions with constraints and example test cases
+- More problems can be added by editing `server/src/db/data.js` and restarting the server
 
 ### 💻 **Secure Code Execution**
-- Write and run **Java** code in a sandboxed Docker container
+- Write and run **Java** code in a sandboxed Docker container (Eclipse Temurin 11 JDK)
 - **Future support**: C++ and Python (coming soon)
-- Prevents malicious code execution while providing real-time feedback
-- Instant compilation and runtime error reporting
+- Pre-built Docker image with volume-mounted code — no image rebuild per submission
+- Strict resource limits: 0.5 CPU, 512MB RAM, no network, read-only filesystem, dropped capabilities
+- Compilation and runtime error reporting with time/memory limit detection
 
 ### 🔐 **Authentication & Social Integration**
 - Seamless Google sign-in via Firebase
@@ -109,8 +110,8 @@ AlgoJunction/
                     │ VITE_BACKEND_URL
                     ▼
         ┌──────────────────────────┐
-        │   Express Backend        │
-        │   (Node.js + TypeScript) │
+         │   Express Backend        │
+         │   (Node.js + ESM)         │
         │                          │
         │  Routes:                 │
         │  - /questions            │
@@ -123,12 +124,12 @@ AlgoJunction/
         │                       │
         ▼                       ▼
    ┌─────────────┐        ┌──────────────┐
-   │ MongoDB     │        │ Docker       │
-   │ Atlas       │        │ Container    ��
-   │             │        │              │
-   │ - Users     │        │ - OpenJDK 11 │
-   │ - Problems  │        │ - Sandbox    │
-   │ - Submissions        │ - Execution  │
+    │ MongoDB     │        │ Docker       │
+    │ Atlas       │        │ Container    │
+    │             │        │              │
+    │ - Users     │        │ - Temurin 11 │
+    │ - Problems  │        │ - Sandbox    │
+    │ - Submissions        │ - Execution  │
    └─────────────┘        └──────────────┘
 ```
 
@@ -139,12 +140,12 @@ AlgoJunction/
 | Layer | Technology |
 |---|---|
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Framer Motion |
-| **Code Editor** | CodeMirror 6 with syntax highlighting for Java, C++, Python |
+| **Code Editor** | CodeMirror 6 with syntax highlighting for Java |
 | **Authentication** | Firebase (Google OAuth 2.0) |
 | **State Management** | Redux Toolkit |
 | **Backend** | Node.js 18+ (ESM), Express.js |
 | **Database** | MongoDB Atlas with Mongoose ODM |
-| **Code Execution** | Docker (OpenJDK 11 container) with sandboxed environment |
+| **Code Execution** | Docker (Eclipse Temurin 11 JDK) with sandboxed environment |
 | **Charts & Graphs** | Chart.js, React Heat Map for contribution tracking |
 | **UI Components** | Radix UI, Lucide React Icons |
 | **Frontend Hosting** | Vercel |
@@ -160,53 +161,76 @@ AlgoJunction/
 │
 ├── client/                          # React Frontend
 │   ├── src/
-│   │   ├── App.tsx                  # Main app component
+│   │   ├── App.tsx                  # Router + Firebase init
 │   │   ├── main.tsx                 # React DOM entry point
-│   │   ├── components/              # Reusable React components
-│   │   │   ├── Editor.tsx           # Code editor component
-│   │   │   ├── ProblemDescription.tsx
-│   │   │   ├── Console.tsx          # Output console
-│   │   │   └── ProfileDashboard.tsx
-│   │   ├── pages/                   # Page components
-│   │   ├── store.ts                 # Redux store configuration
-│   │   ├── lib/                     # Utility functions & helpers
-│   │   └── index.css                # Global styles
+│   │   ├── store.ts                 # Redux store
+│   │   ├── components/              # Reusable UI components (shadcn-style)
+│   │   │   └── ui/                  # Button, Card, Input, Tabs, etc.
+│   │   ├── lib/
+│   │   │   ├── component/           # Shared components (Header, progress)
+│   │   │   ├── features/            # Redux slices (questions, totalques)
+│   │   │   ├── pages/               # Page components
+│   │   │   │   ├── auth/            # Sign-in page
+│   │   │   │   ├── home/            # Problem list page
+│   │   │   │   ├── landing/         # Landing/marketing page
+│   │   │   │   ├── problem/         # Problem solving page
+│   │   │   │   │   └── components/  # Editor, ProblemDesc, Console
+│   │   │   │   ├── profile/         # User profile page
+│   │   │   │   └── error/           # 404 error page
+│   │   │   └── utils.ts             # Utility functions & TypeScript interfaces
+│   │   └── index.css                # Tailwind directives + global styles
 │   ├── .env.example                 # Environment template
+│   ├── .nvmrc                       # Node version (24.x)
 │   ├── package.json
 │   └── vite.config.ts               # Vite configuration
 │
 ├── server/                          # Express Backend
 │   ├── src/
 │   │   ├── index.js                 # Server entry point (port 3000)
-│   │   ├── routes/                  # API route handlers
-│   │   │   └── routes.js
+│   │   ├── routes/
+│   │   │   └── routes.js            # All API route definitions + health check
 │   │   ├── controllers/             # Business logic
+│   │   │   ├── runJavaController.js # Docker sandbox code execution
+│   │   │   ├── questionsController.js
+│   │   │   └── profileController.js
 │   │   ├── db/                      # Database connection & models
-│   │   │   └── connectDb.js
-│   │   ├── docker/                  # Docker execution utilities
-│   │   ├── execute/                 # Code execution logic
-│   │   ├── inputs/                  # Test input files
-│   │   └── scripts/                 # Database seeding & utilities
-│   │       └── dbTransactions.js
+│   │   │   ├── connectDb.js         # MongoDB connection
+│   │   │   ├── data.js              # Static problem seed data
+│   │   │   ├── mongooseClient.js    # Mongoose CRUD operations
+│   │   │   ├── schema/
+│   │   │   │   └── dbSchema.js      # Mongoose schemas (User, Submission)
+│   │   │   └── utils/
+│   │   │       └── formatDate.js    # Date formatter (YYYY/MM/DD)
+│   │   ├── docker/
+│   │   │   └── Dockerfile           # Eclipse Temurin 11 JDK image
+│   │   ├── execute/                 # Solution.java written per execution
+│   │   ├── inputs/                  # Test input.txt written per test case
+│   │   └── scripts/
+│   │       └── dbTransactions.js    # MongoDB seed/test script
+│   ├── nginx/
+│   │   └── algojunction.conf        # Nginx reverse proxy config
 │   ├── .env.example                 # Environment template
 │   ├── package.json
-│   └── Dockerfile                   # Docker image for Java execution
+│   └── ecosystem.config.cjs         # PM2 process manager config
 │
 ├── deploy-client.sh                 # Frontend deployment script
 ├── deploy-server.sh                 # Backend deployment script
+├── vercel.json                      # Vercel deployment config
 ├── README.md                        # This file
 └── .gitignore
 ```
 
 ### Key Directories Explained
 
-- **`client/components/`**: Reusable UI components (Editor, Console, ProblemDescription, etc.)
-- **`client/lib/`**: API calls, auth utilities, and helper functions
+- **`client/src/components/ui/`**: Reusable UI components (Button, Card, Tabs, etc.) — shadcn-style
+- **`client/src/lib/pages/`**: Route-connected page components (auth, home, landing, problem, profile, error)
+- **`client/src/lib/features/`**: Redux Toolkit slices (questions, totalques)
+- **`client/src/lib/component/`**: Shared app-level components (Header, progress)
 - **`server/routes/`**: API endpoint definitions
 - **`server/controllers/`**: Logic for handling requests
-- **`server/docker/`**: Docker container management and code execution
-- **`server/execute/`**: Java code compilation and execution
-- **`server/db/`**: MongoDB connection, schemas, and models
+- **`server/docker/`**: Dockerfile for the pre-built Java execution image
+- **`server/db/`**: MongoDB connection, Mongoose schemas, CRUD operations, and static problem data
+- **`server/nginx/`**: Nginx reverse proxy configuration for production
 
 ---
 
@@ -538,25 +562,24 @@ Neither file is committed to the repository for security reasons. Use `.env.exam
 
 ## Performance & Stats
 
-### Current Metrics (As of April 2026)
+### Current Metrics (As of June 2026)
 
 | Metric | Value |
 |---|---|
-| **Total Problems** | 100+ DSA problems |
-| **Supported Languages** | Java (C++, Python coming soon) |
-| **Average Execution Time** | < 200ms per submission |
+| **Total Problems** | 4 DSA problems (expandable via data.js) |
+| **Supported Languages** | Java (C++, Python planned) |
+| **Average Execution Time** | < 200ms per test case |
 | **Database Response Time** | < 50ms |
 | **Code Editor Load Time** | < 1.5s |
 | **Deployment Time** | Frontend: 2-5 min, Backend: 3-10 min |
 | **Monthly Active Users** | Tracking enabled via Firebase |
-| **Submission Success Rate** | Real-time feedback on all submissions |
 
 ### Infrastructure
 
 - **Frontend**: Deployed on Vercel (CDN-enabled, global edge locations)
 - **Backend**: Linux VM with Docker for isolated execution
 - **Database**: MongoDB Atlas (multi-region support)
-- **Code Execution**: Sandboxed Docker containers (5-30 second timeout per submission)
+- **Code Execution**: Pre-built Docker image (Eclipse Temurin 11) with per-test-case volume mounts, 10s timeout
 
 ---
 
@@ -592,7 +615,7 @@ We welcome contributions! Here's how to get started:
 1. **Fork the repository** on GitHub
 2. **Create a feature branch**: `git checkout -b feature/your-feature`
 3. **Make your changes** and test thoroughly
-4. **Commit with clear messages**: `git commit -m 'Add feature: description'`
+4. **Commit with conventional messages**: `git commit -m 'feat: description'`
 5. **Push to your fork**: `git push origin feature/your-feature`
 6. **Open a Pull Request** with a description of your changes
 

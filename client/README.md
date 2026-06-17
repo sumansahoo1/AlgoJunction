@@ -5,10 +5,11 @@ React + TypeScript + Vite frontend for AlgoJunction, a LeetCode-style competitiv
 ## Tech stack
 
 - React 18, TypeScript, Vite
-- Firebase (Google auth)
+- Firebase (Google OAuth)
 - Redux Toolkit
-- Radix UI + Tailwind CSS
-- CodeMirror (code editor)
+- Radix UI + Tailwind CSS + Framer Motion
+- CodeMirror 6 (Java editor)
+- Chart.js + @uiw/react-heat-map (profile analytics)
 
 ## Local setup
 
