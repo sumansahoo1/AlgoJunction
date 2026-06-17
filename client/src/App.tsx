@@ -1,6 +1,8 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import { initializeApp } from "firebase/app";
+import { ThemeProvider } from "./lib/theme/theme-provider";
 
 import HomePage from "./lib/pages/home/home";
 import { Problem } from "./lib/pages/problem/problem";
@@ -10,6 +12,13 @@ import { Provider } from 'react-redux'
 import { store } from "./store";
 import Error from "./lib/pages/error/error";
 import Landing from "./lib/pages/landing/landing";
+
+const ThemeLayout = () => (
+  <ThemeProvider>
+    <Outlet />
+    <Toaster position="top-right" richColors />
+  </ThemeProvider>
+);
 
 function App() {
   const firebaseConfig = {
@@ -25,11 +34,16 @@ function App() {
   const route = createBrowserRouter(
     [
       { path: "/", element: <Landing /> },
-      { path: "/home", element: <HomePage /> },
-      { path: "/problem/:id", element: <Problem />},
       { path: "/signin", element: <SignIn /> },
-      { path: "/profile", element: <ProfilePage /> },
-      {path: "*", element: <Error />}
+      {
+        element: <ThemeLayout />,
+        children: [
+          { path: "/home", element: <HomePage /> },
+          { path: "/problem/:id", element: <Problem />},
+          { path: "/profile", element: <ProfilePage /> },
+          { path: "*", element: <Error /> },
+        ],
+      },
     ]
   );
 

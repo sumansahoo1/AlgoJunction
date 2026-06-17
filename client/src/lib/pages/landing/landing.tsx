@@ -1,267 +1,272 @@
-import * as Accordion from '@radix-ui/react-accordion';
-import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { motion } from 'framer-motion';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Moon, Sun, Code2, Shield, Sparkles, LineChart, Zap } from "lucide-react";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { delayChildren: 0.2, staggerChildren: 0.15, ease: "easeOut" }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 24, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
+};
+
+const code = `class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        Map<Integer, Integer> seen = new HashMap<>();
+        for (int i = 0; i < nums.length; i++) {
+            int need = target - nums[i];
+            if (seen.containsKey(need)) {
+                return new int[]{ seen.get(need), i };
+            }
+            seen.put(nums[i], i);
+        }
+        return new int[]{};
+    }
+}`;
+
+const features = [
+  {
+    icon: Code2,
+    title: "Real-World Coding Challenges",
+    description: "Tackle an extensive library of DSA problems crafted to boost your problem-solving skills and prepare you for technical interviews."
+  },
+  {
+    icon: Shield,
+    title: "Secure, Isolated Environment",
+    description: "Practice confidently with Docker-based isolation, ensuring a distraction-free and safe coding space."
+  },
+  {
+    icon: Sparkles,
+    title: "Intuitive Interface",
+    description: "Enjoy a smooth, responsive experience designed to make learning efficient and enjoyable."
+  },
+  {
+    icon: LineChart,
+    title: "Seamless Progress Tracking",
+    description: "Log in effortlessly and keep track of your achievements over time, helping you stay motivated and see your growth."
+  },
+  {
+    icon: Zap,
+    title: "Built for Performance",
+    description: "Our platform is optimized to provide a fast and seamless experience, letting you focus fully on coding without delays."
+  }
+];
+
+const steps = [
+  {
+    title: "Select Your Challenge",
+    description: "From simple algorithms to complex data structures, find problems that fit your level."
+  },
+  {
+    title: "Code in a Realistic Environment",
+    description: "Practice in a safe, Docker-based system that isolates your work and keeps it secure."
+  },
+  {
+    title: "See Results Instantly",
+    description: "Get immediate feedback on your solutions, analyze your progress, and keep advancing."
+  }
+];
 
 const Landing = () => {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
-    const navigate = useNavigate();
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
-    useEffect(() => {
+  const navigate = useNavigate();
 
-        if (localStorage.getItem("token") != null || localStorage.getItem("username") != null || localStorage.getItem("email") != null || localStorage.getItem("photoURL") != null) {
-            navigate("/home",);
-        }
-    }, [navigate]);
+  useEffect(() => {
+    if (localStorage.getItem("token") != null || localStorage.getItem("username") != null || localStorage.getItem("email") != null || localStorage.getItem("photoURL") != null) {
+      navigate("/home");
+    }
+  }, [navigate]);
 
+  return (
+    <div>
+      {/* ─── Hero ─── */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[600px] h-[600px] rounded-full bg-slate-200/60 dark:bg-slate-800/30 blur-3xl" />
+        </div>
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                delayChildren: 0.3,
-                staggerChildren: 0.2,
-                ease: "easeOut"
-            }
-        }
-    };
+        <div className="absolute top-4 right-4 z-20">
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+        </div>
 
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: {
-            y: 0,
-            opacity: 1,
-            transition: {
-                duration: 0.5,
-                ease: "easeOut"
-            }
-        }
-    };
-
-    const features = [
-        {
-            title: "Real-World Coding Challenges",
-            description: "Tackle an extensive library of DSA problems crafted to boost your problem-solving skills and prepare you for technical interviews."
-        },
-        {
-            title: "Secure, Isolated Coding Environment",
-            description: "Practice confidently with Docker-based isolation, ensuring a distraction-free and safe coding space."
-        },
-        {
-            title: "Intuitive Interface",
-            description: "Enjoy a smooth, responsive experience designed to make learning efficient and enjoyable."
-        },
-        {
-            title: "Seamless Progress Tracking",
-            description: "Log in effortlessly and keep track of your achievements over time, helping you stay motivated and see your growth."
-        },
-        {
-            title: "Built for Performance",
-            description: "Our platform is optimized to provide a fast and seamless experience, letting you focus fully on coding without delays."
-        }
-    ];
-
-    const steps = [
-        {
-            title: "Select Your Challenge",
-            description: "From simple algorithms to complex data structures, find problems that fit your level."
-        },
-        {
-            title: "Code in a Realistic Environment",
-            description: "Practice in a safe, Docker-based system that isolates your work and keeps it secure."
-        },
-        {
-            title: "See Results Instantly",
-            description: "Get immediate feedback on your solutions, analyze your progress, and keep advancing."
-        }
-    ];
-
-    return (
         <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 relative overflow-hidden"
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="relative z-10 px-6 pt-24 pb-32 container mx-auto"
         >
-            {/* Floating background elements */}
-            <motion.div
-                className="fixed top-10 right-[10%] w-[500px] h-[500px] bg-gradient-to-br from-blue-300/40 to-indigo-300/40 rounded-full filter blur-3xl"
-                animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.5, 0.3],
-                    y: [0, -20, 0],
-                }}
-                transition={{
-                    duration: 15,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                }}
-            />
-            <motion.div
-                className="fixed bottom-0 left-[5%] w-[600px] h-[600px] bg-gradient-to-tr from-purple-300/40 to-pink-300/40 rounded-full filter blur-3xl"
-                animate={{
-                    scale: [1.2, 1, 1.2],
-                    opacity: [0.3, 0.5, 0.3],
-                    x: [0, 20, 0],
-                }}
-                transition={{
-                    duration: 18,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                }}
-            />
-            <motion.div
-                className="fixed top-[40%] left-[20%] w-[400px] h-[400px] bg-gradient-to-bl from-indigo-200/30 to-blue-300/30 rounded-full filter blur-3xl"
-                animate={{
-                    scale: [1, 1.3, 1],
-                    opacity: [0.2, 0.4, 0.2],
-                    rotate: [0, 90, 0],
-                }}
-                transition={{
-                    duration: 20,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                }}
-            />
-            <motion.div
-                className="fixed top-[20%] left-[50%] w-[300px] h-[300px] bg-gradient-to-tr from-purple-200/30 via-indigo-300/30 to-blue-200/30 rounded-full filter blur-3xl"
-                animate={{
-                    scale: [1.2, 0.8, 1.2],
-                    opacity: [0.3, 0.5, 0.3],
-                    y: [0, 30, 0],
-                }}
-                transition={{
-                    duration: 12,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                }}
-            />
-            {/* Main Content */}
-            <div className="relative z-10 px-6 pt-20 pb-32 container mx-auto">
-                {/* Hero Section */}
-                <motion.div variants={containerVariants} className="text-center max-w-4xl mx-auto">
-                    <motion.h1
-                        variants={itemVariants}
-                        className="text-6xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6"
-                    >
-                        AlgoJunction: Master Data Structures & Algorithms with Confidence
-                    </motion.h1>
-                    <motion.p
-                        variants={itemVariants}
-                        className="text-2xl text-gray-700 mb-8"
-                    >
-                        Sharpen Your Coding Skills in a Secure, Real-World Environment
-                    </motion.p>
-                    <motion.p
-                        variants={itemVariants}
-                        className="text-lg text-gray-600 max-w-3xl mx-auto"
-                    >
-                        At AlgoJunction, we're dedicated to helping developers like you conquer data structures
-                        and algorithms with hands-on practice in a professional-grade, Docker-powered environment.
-                    </motion.p>
-                </motion.div>
+          <motion.div variants={containerVariants} className="text-center max-w-4xl mx-auto">
+            <motion.h1
+              variants={itemVariants}
+              className="text-5xl md:text-6xl font-bold tracking-tight mb-6"
+            >
+              Master Data Structures & Algorithms
+            </motion.h1>
+            <motion.p
+              variants={itemVariants}
+              className="text-xl text-slate-500 dark:text-slate-400 mb-8"
+            >
+              Practice, learn, and grow with real coding problems in a secure,
+              professional-grade environment.
+            </motion.p>
+            <motion.div variants={itemVariants} className="flex items-center justify-center gap-4">
+              <Button size="lg" onClick={() => navigate("/home")}>
+                Start Solving Now
+              </Button>
+              <Button variant="outline" size="lg" onClick={() => navigate("/signin")}>
+                Sign In
+              </Button>
+            </motion.div>
+          </motion.div>
 
-                {/* Features Section */}
-                <motion.div variants={containerVariants} className="mt-32 max-w-4xl mx-auto">
-                    <motion.h2
-                        variants={itemVariants}
-                        className="text-4xl font-bold text-center mb-12"
-                    >
-                        Why Choose AlgoJunction?
-                    </motion.h2>
-
-                    <div className="space-y-4">
-                        <Accordion.Root type="multiple" className="space-y-4">
-                            {features.map((feature, index) => (
-                                <motion.div
-                                    key={index}
-                                    variants={itemVariants}
-                                    whileHover={{ scale: 1.02 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="bg-gradient-to-r from-white to-indigo-50/30 rounded-lg shadow-sm border border-indigo-50"
-                                >
-                                    <Accordion.Item value={`item-${index + 1}`}>
-                                        <Accordion.Header>
-                                            <Accordion.Trigger className="w-full px-6 py-4 flex justify-between items-center text-lg font-medium text-gray-800 hover:text-indigo-600">
-                                                {feature.title}
-                                                <motion.div
-                                                    whileHover={{ rotate: 180 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <ChevronDownIcon className="w-5 h-5 text-gray-600" />
-                                                </motion.div>
-                                            </Accordion.Trigger>
-                                        </Accordion.Header>
-                                        <Accordion.Content className="px-6 pb-4 text-gray-600">
-                                            {feature.description}
-                                        </Accordion.Content>
-                                    </Accordion.Item>
-                                </motion.div>
-                            ))}
-                        </Accordion.Root>
-                    </div>
-                </motion.div>
-
-                {/* How it Works Section */}
-                <motion.div
-                    variants={containerVariants}
-                    className="mt-32 max-w-4xl mx-auto"
-                >
-                    <motion.h2
-                        variants={itemVariants}
-                        className="text-4xl font-bold text-center mb-12"
-                    >
-                        How It Works
-                    </motion.h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {steps.map((step, index) => (
-                            <motion.div
-                                key={index}
-                                variants={itemVariants}
-                                whileHover={{ y: -5 }}
-                                className="bg-gradient-to-br from-white to-blue-50 p-6 rounded-lg shadow-sm border border-blue-100"
-                            >
-                                <div className="text-3xl font-bold text-indigo-600 mb-4">{index + 1}</div>
-                                <h3 className="text-xl font-semibold mb-3 text-gray-800">{step.title}</h3>
-                                <p className="text-gray-600">{step.description}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </motion.div>
-
-                {/* CTA Section */}
-                <motion.div
-                    variants={containerVariants}
-                    className="mt-32 text-center max-w-4xl mx-auto"
-                >
-                    <motion.h2
-                        variants={itemVariants}
-                        className="text-4xl font-bold mb-6"
-                    >
-                        Get Started with AlgoJunction Today
-                    </motion.h2>
-                    <motion.p
-                        variants={itemVariants}
-                        className="text-lg text-gray-600 mb-12"
-                    >
-                        Join a community of learners, boost your skills, and make your code count.
-                    </motion.p>
-                    <motion.button
-                        variants={itemVariants}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => window.location.href = "/home"}
-                        className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-xl font-semibold rounded-full shadow-lg hover:from-indigo-700 hover:to-blue-600 transition duration-300"
-                    >
-                        Start Solving Now
-                    </motion.button>
-                </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.6, ease: "easeOut" }}
+            className="mt-20 max-w-2xl mx-auto"
+          >
+            <div className="rounded-lg overflow-hidden shadow-2xl border">
+              <div className="bg-slate-800 dark:bg-slate-700 px-4 py-2.5 flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-red-500" />
+                <span className="w-3 h-3 rounded-full bg-yellow-500" />
+                <span className="w-3 h-3 rounded-full bg-green-500" />
+                <span className="text-slate-400 text-xs ml-2 font-mono">Solution.java</span>
+              </div>
+              <pre className="bg-slate-950 dark:bg-slate-900 text-slate-300 text-sm leading-relaxed p-4 overflow-x-auto font-mono">
+                <code>{code}</code>
+              </pre>
             </div>
+          </motion.div>
         </motion.div>
-    );
+      </section>
+
+      {/* ─── Features ─── */}
+      <section className="bg-slate-50 dark:bg-slate-900/50 px-6 py-32">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={containerVariants}
+          className="container mx-auto max-w-6xl"
+        >
+          <motion.h2
+            variants={itemVariants}
+            className="text-3xl md:text-4xl font-bold text-center mb-16"
+          >
+            Why Choose AlgoJunction?
+          </motion.h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{ y: -4 }}
+                className="bg-white dark:bg-slate-950 rounded-xl border p-6"
+              >
+                <div className="w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                  <feature.icon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {feature.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ─── How It Works ─── */}
+      <section className="px-6 py-32">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={containerVariants}
+          className="container mx-auto max-w-5xl"
+        >
+          <motion.h2
+            variants={itemVariants}
+            className="text-3xl md:text-4xl font-bold text-center mb-16"
+          >
+            How It Works
+          </motion.h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.map((step, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{ y: -5 }}
+                className="text-center"
+              >
+                <div className="w-14 h-14 mx-auto rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center text-xl font-bold mb-5">
+                  {index + 1}
+                </div>
+                <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ─── CTA ─── */}
+      <section className="px-6 py-32 border-t">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={containerVariants}
+          className="container mx-auto max-w-3xl text-center"
+        >
+          <motion.h2
+            variants={itemVariants}
+            className="text-3xl md:text-4xl font-bold mb-6"
+          >
+            Get Started with AlgoJunction Today
+          </motion.h2>
+          <motion.p
+            variants={itemVariants}
+            className="text-lg text-slate-500 dark:text-slate-400 mb-10"
+          >
+            Join a community of learners, boost your skills, and make your code count.
+          </motion.p>
+          <motion.div variants={itemVariants} className="flex items-center justify-center gap-4">
+            <Button size="lg" onClick={() => navigate("/home")}>
+              Start Solving Now
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => navigate("/signin")}>
+              Browse Problems
+            </Button>
+          </motion.div>
+        </motion.div>
+      </section>
+    </div>
+  );
 };
 
 export default Landing;

@@ -18,9 +18,9 @@ const calculateDaysinWords = (date: string) => {
 const SubmissionComponent = ({ description, date, status }: SubmissionComponentProps) => {
     const isAccepted = status === 'accepted';
     return (
-        <div className="bg-white rounded-md shadow-sm p-5 flex justify-between items-center">
+        <div className="bg-white dark:bg-slate-950 rounded-md shadow-sm p-5 flex justify-between items-center">
             <div className="flex items-center gap-3">
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${isAccepted ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${isAccepted ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'}`}>
                     {isAccepted ? 'Accepted' : 'Failed'}
                 </span>
                 <div className="text-sm font-medium">{description}</div>

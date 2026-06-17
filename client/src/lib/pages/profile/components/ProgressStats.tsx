@@ -43,8 +43,8 @@ const ProgressStats = ({ solved, total }: ProgressStatsProps) => {
             <div className="relative w-32 h-32 mx-auto">
                 <Doughnut data={data} options={options} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-5xl font-bold text-gray-800">{solved}</span>
-                    <span className="text-l text-gray-500">/{total}</span>
+                    <span className="text-5xl font-bold text-gray-800 dark:text-slate-100">{solved}</span>
+                    <span className="text-l text-gray-500 dark:text-slate-400">/{total}</span>
                 </div>
             </div>
             <div className="mt-4 text-center">

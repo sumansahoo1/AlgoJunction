@@ -1,24 +1,27 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-import { Avatar } from '@radix-ui/themes';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { Header } from '@/lib/component/Header';
 import SubmissionComponent from './components/SubmissionComponent';
 import ContributionGraph from './components/ContributionGraph';
 import ProgressStats from './components/ProgressStats';
+import { toast } from 'sonner';
 
 const ProfilePage = () => {
     const navigate = useNavigate();
 
-    const [loading, setLoading] = React.useState(true);
+    const [loading, setLoading] = useState(true);
 
-    const [submissionGraphData, setSubmissionGraphData] = React.useState<{ date: string; count: number }[] | null>(null);
-    const [submissions, setSubmissions] = React.useState<{ quesName: string; submissionTime: string; status: string }[]>([]);
-    const [solvedques, setSolvedQues] = React.useState(0);
-    const [totalques, setTotalQues] = React.useState(0);
+    const [submissionGraphData, setSubmissionGraphData] = useState<{ date: string; count: number }[] | null>(null);
+    const [submissions, setSubmissions] = useState<{ quesName: string; submissionTime: string; status: string }[]>([]);
+    const [solvedques, setSolvedQues] = useState(0);
+    const [totalques, setTotalQues] = useState(0);
 
     useEffect(() => {
 
@@ -29,17 +32,14 @@ const ProfilePage = () => {
         async function fetchQuestions() {
             try {
                 setLoading(true);
-                // Define your query parameters
                 const queryParams = {
                     username: localStorage.getItem("username"),
                     email: localStorage.getItem("email"),
                 };
 
-                // Construct the URL with query parameters
                 const url = new URL(import.meta.env.VITE_BACKEND_URL + "/profile");
                 (Object.keys(queryParams) as Array<keyof typeof queryParams>).forEach(key => url.searchParams.append(key, queryParams[key]?.toString() ?? ""));
                 const response = await axios.get(url.toString());
-                // console.log(response.data);
                 const data = response.data;
 
                 const dateCounts = data.dates.reduce((acc: { [key: string]: number }, date: string) => {
@@ -58,7 +58,7 @@ const ProfilePage = () => {
 
             } catch (error) {
                 if (axios.isAxiosError(error) && error.response?.status === 429) {
-                    alert('Too many requests. Please try again later.');
+                    toast.error('Too many requests. Please try again later.');
                 } else {
                     console.log("Error fetching");
                     console.error(error);
@@ -74,30 +74,43 @@ const ProfilePage = () => {
     return (
         <>
             <Header />
-            {loading ? <div className="w-screen h-screen flex justify-center items-center">Loading...</div> :
-                (!localStorage.getItem("username")) ? null :
-                    <main className="w-screen h-full min-h-screen flex bg-gray-100">
+            {loading ? (
+                <main className="w-screen h-full min-h-screen flex">
+                    <div className='flex flex-col items-center py-10 gap-2 w-1/4'>
+                        <Skeleton className="h-24 w-24 rounded-full" />
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-10 w-1/2" />
+                    </div>
+                    <div className='flex flex-col gap-2 py-10 w-3/4'>
+                        <Skeleton className="h-32 w-60" />
+                        <Skeleton className="h-40 w-full" />
+                    </div>
+                </main>
+            ) : (
+                !localStorage.getItem("username") ? null :
+                    <main className="w-screen h-full min-h-screen flex">
                         <div className='flex flex-col items-center py-10 gap-2 w-1/4'>
-                            <Avatar src={localStorage.getItem("photoURL") ?? ""} radius="full" size="6" fallback="skdfn" />
-                            <text className='text-2xl font-bold'>{JSON.parse(localStorage.getItem('username') ?? "").toString()}</text>
-                            <div className="cursor-pointer font-semibold p-2 rounded-md w-1/2 text-center bg-red-400 text-white hover:bg-red-500 hover:shadow-md"
+                            <Avatar className="h-24 w-24 text-2xl">
+                                <AvatarImage src={localStorage.getItem("photoURL") ?? ""} />
+                                <AvatarFallback>{(localStorage.getItem("username") ?? "U")[0]}</AvatarFallback>
+                            </Avatar>
+                            <p className='text-2xl font-bold'>{JSON.parse(localStorage.getItem('username') ?? "").toString()}</p>
+                            <Button variant="destructive" className="w-1/2"
                                 onClick={() => {
-                                    console.log("Sign Out");
                                     localStorage.removeItem("username");
                                     localStorage.removeItem("token");
                                     localStorage.removeItem("email");
                                     localStorage.removeItem("photoURL");
                                     navigate("/signin", { replace: true });
-                                }}> Logout</div>
+                                }}>
+                                Logout
+                            </Button>
                         </div>
                         <div className='flex flex-col gap-2 py-10 w-3/4'>
 
-                            <Card className="w-60 bg-white shadow-md">
+                            <Card className="w-60 shadow-md">
                                 <CardContent className="p-4">
                                     <ProgressStats solved={solvedques} total={totalques} />
-                                    {/* <Box label="Solved" queCompleted={solvedques} totalQues={totalques} />
-                                <Box label="Medium" queCompleted={3} totalQues={8} />
-                                <Box label="Hard" queCompleted={2} totalQues={5} /> */}
                                 </CardContent>
                             </Card>
 
@@ -105,7 +118,7 @@ const ProfilePage = () => {
                                 {submissionGraphData && <ContributionGraph value={submissionGraphData} />}
                             </div>
                             <div className='flex flex-col gap-2 '>
-                                <text className='text-lg font-bold'>Submissions</text>
+                                <p className='text-lg font-bold'>Submissions</p>
                                 <div className='flex flex-col gap-2 pr-4'>
                                     {submissions.length > 0 ? (
                                         submissions
@@ -114,13 +127,14 @@ const ProfilePage = () => {
                                                 return <SubmissionComponent key={index} description={item.quesName} date={item.submissionTime} status={item.status} />
                                             })
                                     ) : (
-                                        <text className='text-gray-400'>No submissions yet</text>
+                                        <p className='text-slate-500 dark:text-slate-400'>No submissions yet</p>
                                     )}
                                 </div>
                             </div>
 
                         </div>
-                    </main>}
+                    </main>
+            )}
         </>
     );
 };

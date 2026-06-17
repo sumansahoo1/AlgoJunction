@@ -11,7 +11,15 @@ import {
 import { Icons } from "@/components/icons";
 import { useNavigate } from "react-router-dom";
 import React from "react";
-import { Dialog, Flex } from "@radix-ui/themes";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const SignInCard = () => {
   const navigate = useNavigate();
@@ -68,21 +76,24 @@ export const SignInCard = () => {
             <Icons.google className="mr-2 h-4 w-4" />
             Google
           </Button>
-          <Dialog.Root >
-            <Dialog.Trigger>
+          <Dialog>
+            <DialogTrigger asChild>
               <Button variant="outline" className="flex items-center justify-center">
                 <Icons.gitHub className="mr-2 h-4 w-4" />Github
               </Button>
-            </Dialog.Trigger>
-            <Dialog.Content>
-              <Dialog.Title>Building</Dialog.Title>
-              <Flex gap="3" mt="4" justify="end">
-                <Dialog.Close>
-                  <Button variant={"outline"} >Okay</Button>
-                </Dialog.Close>
-              </Flex>
-            </Dialog.Content>
-          </Dialog.Root>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Building</DialogTitle>
+                <DialogDescription>GitHub sign-in is coming soon!</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Okay</Button>
+                </DialogTrigger>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardContent>
     </Card>
