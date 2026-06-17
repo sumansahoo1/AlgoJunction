@@ -16,6 +16,7 @@ cd server && yarn start         # nodemon (port 3000)
 ./deploy-server.sh              # docker build image → yarn install → pm2 start
 ```
 
+- **CI pipeline**: `.github/workflows/ci.yml` — runs on push/PR to `main`. Four parallel jobs: client lint+typecheck+build, server lint, server smoke test, Docker build.
 - **No tests exist** on either side.
 - Lint must pass before build (`yarn build` runs `tsc` first).
 
@@ -27,6 +28,14 @@ cd server && yarn start         # nodemon (port 3000)
 - **Auth**: Firebase initialized in `App.tsx`. Tokens stored in `localStorage` (keys: `token`, `username`, `email`, `photoURL`). **No server-side Firebase token validation** — the backend trusts client-provided `username`/`email`.
 - **CORS**: Hardcoded allowlist in `server/src/index.js` — `localhost:5173` and `algojunction.sumansahoo.com`.
 - **PM2 ecosystem**: `server/ecosystem.config.cjs` with name `algojunction-server`.
+
+## Commits
+
+- Use [Conventional Commits](https://www.conventionalcommits.org/): `type: short description`
+- Types used in this repo: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`
+- Each commit must be atomic — one logical change, independently understandable and debuggable
+- Before committing, stage only intended files, run `git status` and `git diff`
+- Do not commit unless explicitly requested by the user
 
 ## Conventions
 
