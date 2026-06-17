@@ -22,7 +22,6 @@ export async function insertNew(userId, questionId, code, language, result, test
     } catch (error) {
         console.error('Error:', error);
         return null;
-    } finally {
     }
 }
 
@@ -50,7 +49,6 @@ export async function addOrUpdateUser(username, email, submissionId) {
         console.log(`${new Date().toLocaleString()}: User saved/updated, id:`, response._id);
     } catch (error) {
         console.error('Error:', error);
-    } finally {
     }
 }
 
@@ -73,10 +71,8 @@ export async function getUserByUsernameAndEmail(username, email) {
     } catch (error) {
         console.error('Error:', error);
         return null;
-    } finally {
     }
 }
-
 
 export async function getSubmissionsDetails(submissionIds) {
     try {
@@ -104,7 +100,6 @@ export async function getSubmissionsDetails(submissionIds) {
     } catch (error) {
         console.error('Error:', error);
         return null;
-    } finally {
     }
 }
 

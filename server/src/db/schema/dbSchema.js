@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import formatDate from '../utils/formatDate.js';
 
 // Define the submission schema
 const submissionSchema = new mongoose.Schema({
