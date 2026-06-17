@@ -65,7 +65,7 @@ const ProfilePage = () => {
             }
         }
         fetchQuestions();
-    }, []);
+    }, [navigate]);
 
     return (
         <>
