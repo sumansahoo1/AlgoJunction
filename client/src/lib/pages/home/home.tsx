@@ -19,8 +19,12 @@ const HomePage: React.FC = () => {
                 );
                 setQuestions(response.data);
             } catch (error) {
-                console.log("error fetching");
-                console.error(error);
+                if (axios.isAxiosError(error) && error.response?.status === 429) {
+                    alert('Too many requests. Please try again later.');
+                } else {
+                    console.log("error fetching");
+                    console.error(error);
+                }
             }
         }
         fetchQuestions();

@@ -30,7 +30,7 @@ yarn lint                       # ESLint (src/ --ext .js)
 - **Auth**: Firebase initialized in `App.tsx`. Tokens stored in `localStorage` (keys: `token`, `username`, `email`, `photoURL`). **No server-side Firebase token validation** — the backend trusts client-provided `username`/`email`.
 - **CORS**: Hardcoded allowlist in `server/src/index.js` — `localhost:5173` and `algojunction.sumansahoo.com`.
 - **PM2 ecosystem**: `server/ecosystem.config.cjs` with name `algojunction-server`.
-- **Nginx**: reverse proxy config at `server/nginx/algojunction.conf` — proxies `api.algojunction.sumansahoo.com` → `localhost:3000`.
+- **Rate limiting**: `express-rate-limit` in `server/src/middleware/rateLimiter.js`. Default `app.set('trust proxy', 1)` so `req.ip` reads from `X-Forwarded-For`. Global: 100 req/min/IP. Per-endpoint: `/run-java` 5 req/min, `/profile` 20 req/min, questions 60 req/min.
 
 ## Commits
 

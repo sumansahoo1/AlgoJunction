@@ -99,7 +99,11 @@ export const Console = () => {
 
       setRunning(false);
     } catch (error) {
-      console.error("Error running code:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        alert('Too many submissions. Please wait a minute before trying again.');
+      } else {
+        console.error("Error running code:", error);
+      }
       setRunning(false);
     }
   };

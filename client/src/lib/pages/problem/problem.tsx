@@ -44,6 +44,9 @@ export const Problem = () => {
               resolve(response.data['total']);
             })
             .catch((error) => {
+              if (axios.isAxiosError(error) && error.response?.status === 429) {
+                alert('Too many requests. Please try again later.');
+              }
               console.error(error);
               reject(error);
             });
