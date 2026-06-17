@@ -150,6 +150,7 @@ AlgoJunction/
 | **UI Components** | Radix UI, Lucide React Icons |
 | **Frontend Hosting** | Vercel |
 | **Backend Hosting** | Linux VM (AWS, DigitalOcean, etc.) |
+| **Rate Limiting** | express-rate-limit (app-level) + Nginx limit_req (reverse proxy) |
 | **Process Manager** | PM2 (optional but recommended for production) |
 
 ---
@@ -474,6 +475,18 @@ All endpoints are served by the backend at the configured `VITE_BACKEND_URL`.
 | `POST` | `/run-java` | Compile and run submitted Java code in Docker | Yes |
 | `GET` | `/profile?username=&email=` | User profile with submission history and stats | No |
 
+### Rate Limits
+
+| Endpoint | Limit | Layer |
+|---|---|---|
+| All | 100 req/min/IP | Express (global) |
+| `POST /run-java` | 5 req/min/IP | Express |
+| `GET /profile` | 20 req/min/IP | Express |
+| `GET /questions*` | 60 req/min/IP | Express |
+| All | 30 req/s burst 20 | Nginx (reverse proxy) |
+
+When a rate limit is hit, the API responds with `429 Too Many Requests` and a JSON error body.
+
 ### `POST /run-java` Request Body
 
 ```json
@@ -603,7 +616,7 @@ Neither file is committed to the repository for security reasons. Use `.env.exam
 - [ ] **Team Competitions** - Collaborative contests
 - [ ] **Mock Interviews** - Timed challenges with randomized problems
 - [ ] **Problem Suggestions** - ML-based recommendations based on user history
-- [ ] **API Rate Limiting & Quotas** - Prepare for scaling
+- [x] **API Rate Limiting & Quotas** — express-rate-limit (app) + Nginx limit_req (reverse proxy)
 - [ ] **Advanced Analytics** - Detailed performance breakdown
 
 ---

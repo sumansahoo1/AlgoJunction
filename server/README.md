@@ -7,6 +7,7 @@ Express + MongoDB API server for AlgoJunction.
 - Node.js (ESM), Express
 - MongoDB Atlas via Mongoose (Users, Submissions)
 - Docker (Eclipse Temurin 11 JDK) for sandboxed Java code execution
+- Rate limiting: express-rate-limit (app-level) + Nginx limit_req (reverse proxy)
 - dotenv
 
 ## Prerequisites
@@ -58,7 +59,7 @@ The server runs on port `3000` by default.
    pm2 start ecosystem.config.cjs
    pm2 save
    ```
-6. Set up Nginx reverse proxy (see `server/nginx/algojunction.conf`).
+6. Set up Nginx reverse proxy (see `server/nginx/algojunction.conf`). The config includes `limit_req` rate limiting (30 req/s burst 20 with 429 status). The `limit_req_zone` must be added to `/etc/nginx/nginx.conf` http block as noted in the file comments.
 
 ## Scripts
 

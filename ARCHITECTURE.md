@@ -141,7 +141,9 @@ Note: The backend (profile endpoint) receives `username` and `email` as query pa
 `server/src/index.js`:
 - Express app on port 3000
 - CORS enabled
+- `app.set('trust proxy', 1)` — reads real client IP from X-Forwarded-For
 - JSON body parsing
+- **Rate limiting** (`express-rate-limit`): global 100 req/min/IP applied to all routes; stricter per-endpoint limits in route definitions
 - MongoDB connection via `connectDB()`
 - Routes from `routes/routes.js`
 
@@ -421,4 +423,4 @@ POST /run-java (backend)
 - **C++/Python support**: Language selection is already wired in the editor dropdown (disabled). Would need Docker images for each language.
 - **Database-backed problems**: Migrate from `data.js` to MongoDB for dynamic problem management.
 - **WebSocket for execution logs**: Stream real-time execution output instead of waiting for the full pipeline to finish.
-- **Rate limiting**: Protect `/run-java` from abuse (expensive Docker runs).
+- **Rate limiting**: Implemented via `express-rate-limit` (app-level, 5 req/min on `/run-java`) and Nginx `limit_req` (reverse proxy, 30 req/s global).
