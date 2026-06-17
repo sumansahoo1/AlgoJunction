@@ -13,6 +13,7 @@ export interface Example {
 export interface TestCaseResult {
   input: string;
   output: string | null;
+  expectedOutput: string | null;
   error: string | null;
   success: boolean;
 }

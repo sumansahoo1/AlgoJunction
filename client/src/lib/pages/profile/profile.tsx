@@ -16,7 +16,7 @@ const ProfilePage = () => {
     const [loading, setLoading] = React.useState(true);
 
     const [submissionGraphData, setSubmissionGraphData] = React.useState<{ date: string; count: number }[] | null>(null);
-    const [submissions, setSubmissions] = React.useState<{ quesName: string; submissionTime: string }[]>([]);
+    const [submissions, setSubmissions] = React.useState<{ quesName: string; submissionTime: string; status: string }[]>([]);
     const [solvedques, setSolvedQues] = React.useState(0);
     const [totalques, setTotalQues] = React.useState(0);
 
@@ -111,7 +111,7 @@ const ProfilePage = () => {
                                         submissions
                                             .sort((a, b) => new Date(b.submissionTime).getTime() - new Date(a.submissionTime).getTime())
                                             .map((item, index) => {
-                                                return <SubmissionComponent key={index} description={item.quesName} date={item.submissionTime} />
+                                                return <SubmissionComponent key={index} description={item.quesName} date={item.submissionTime} status={item.status} />
                                             })
                                     ) : (
                                         <text className='text-gray-400'>No submissions yet</text>

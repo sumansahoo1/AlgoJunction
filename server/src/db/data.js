@@ -24,12 +24,15 @@ export const questions = [
     inputs: [
       {
         input: "4 2 7 11 15 9",
+        expectedOutput: "[0, 1]",
       },
       {
         input: "3 3 2 4 6",
+        expectedOutput: "[1, 2]",
       },
       {
         input: "2 3 3 6",
+        expectedOutput: "[0, 1]",
       },
     ],
     constraints:
@@ -102,12 +105,15 @@ export const questions = [
     inputs: [
       {
         input: "abcabcbb",
+        expectedOutput: "3",
       },
       {
         input: "bbbbb",
+        expectedOutput: "1",
       },
       {
         input: "pwwkew",
+        expectedOutput: "3",
       },
     ],
     constraints:
@@ -170,12 +176,15 @@ export const questions = [
     inputs: [
       {
         input: "2 1 3 1 2",
+        expectedOutput: "2.0",
       },
       {
         input: "2 1 2 2 0 0",
+        expectedOutput: "2.5",
       },
       {
         input: "2 0 0 2 0 0",
+        expectedOutput: "0.0",
       }
     ],
     constraints:
@@ -255,19 +264,24 @@ export const questions = [
     ],
     "inputs": [
       {
-        "input": "'()'"
+        "input": "'()'",
+        "expectedOutput": "true"
       },
       {
-        "input": "'()[]{}'"
+        "input": "'()[]{}'",
+        "expectedOutput": "true"
       },
       {
-        "input": "'(]'"
+        "input": "'(]'",
+        "expectedOutput": "false"
       },
       {
-        "input": "'([)]'"
+        "input": "'([)]'",
+        "expectedOutput": "false"
       },
       {
-        "input": "'{[]}'"
+        "input": "'{[]}'",
+        "expectedOutput": "true"
       }
     ],
     "constraints": "1 <= s.length <= 10^4, s consists of parentheses only '()[]{}'.",

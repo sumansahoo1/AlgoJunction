@@ -76,12 +76,13 @@ export const Console = () => {
         }
       );
 
-      const rawResults: Array<{ index: number; output: string | null; error: string | null; success: boolean }> = response.data;
+      const rawResults: Array<{ index: number; output: string | null; expectedOutput: string | null; error: string | null; success: boolean }> = response.data;
 
       // Map backend results to TestCaseResult, enriching with input from question examples
       const cases: TestCaseResult[] = rawResults.map((item) => ({
         input: question?.examples[item.index]?.input ?? "",
         output: item.output,
+        expectedOutput: item.expectedOutput ?? null,
         error: item.error,
         success: item.success,
       }));
@@ -209,7 +210,10 @@ export const Console = () => {
                             Expected Output
                           </Label>
                           <p className="text-gray-600 font-medium">
-                            {question?.examples[Number(caseno) - 1].output ?? ""}
+                            {(() => {
+                              const caseResult = question?.submission?.cases[Number(caseno) - 1];
+                              return caseResult?.expectedOutput ?? question?.examples[Number(caseno) - 1]?.output ?? "";
+                            })()}
                           </p>
                         </div>
                         {question?.submission &&

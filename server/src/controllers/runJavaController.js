@@ -43,7 +43,7 @@ export const runJava = async (req, res) => {
             if (ques.id == quesid) {
 
                 // running the code for each input
-                for (const [index, { input }] of ques.inputs.entries()) {
+                for (const [index, { input, expectedOutput }] of ques.inputs.entries()) {
 
                     // copying the input to input file
                     const inputFilePath = path.join(inputsDir, 'input.txt');
@@ -61,7 +61,8 @@ export const runJava = async (req, res) => {
                             `docker run --rm --network none --cpus="0.5" --memory="512m" --memory-swap="512m" --pids-limit="64" --read-only --tmpfs /tmp:rw,noexec,nosuid,size=128m --cap-drop=ALL --security-opt=no-new-privileges:true --ulimit nproc=64:64 --ulimit nofile=256:256 --ulimit fsize=104857600 --ulimit core=0:0 -v ${tempDir}:/app -w /app algojunction-java-executor sh -c "javac Solution.java 2>&1 && timeout --signal=KILL 10s java Solution"`
                         );
                         console.log(`${new Date().toLocaleString()}: Code run done`);
-                        result.push({ index, output, error: null, success: true });
+                        const passed = String(output ?? '').trim() === String(expectedOutput ?? '').trim();
+                        result.push({ index, output: String(output ?? '').trim(), expectedOutput: String(expectedOutput ?? '').trim(), error: null, success: passed });
 
                     } catch (error) {
                         const exitCode = error?.code;
@@ -74,12 +75,14 @@ export const runJava = async (req, res) => {
                     }
                 }
 
+                const allPassed = result.every(r => r.success === true);
+                const overallStatus = allPassed ? 'accepted' : 'failed';
                 const data = {
                     username,
                     quesid,
                     javaCode,
                     language: 'java',
-                    status: { status: 'success', output: output, error: null },
+                    status: { status: overallStatus, output: output, error: null },
                     result,
                     email
                 }

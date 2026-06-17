@@ -6,14 +6,16 @@ interface ContributionGraphProps {
 }
 
 const ContributionGraph = ({ value }: ContributionGraphProps) => {
+  const now = new Date();
+  const year = now.getFullYear();
 
   return (
     <HeatMap
       value={value}
       width={'700px'}
       height={'auto'}
-      startDate={new Date('2024/01/01')}
-      endDate={new Date('2024/12/31')}
+      startDate={new Date(`${year}/01/01`)}
+      endDate={new Date(`${year}/12/31`)}
       rectRender={(props, data) => {
         return (
           <Tooltip placement="top" content={`count: ${data.count || 0}`}>

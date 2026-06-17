@@ -19,17 +19,20 @@ export async function getProfileDetails(req, res) {
                 let submissionJson = {
                     submissionTime: submission.submissionTime,
                     quesName: questions.find(question => question.id === Number(submission.questionId)).qName,
-                    status: submission.status
+                    status: submission.result?.status ?? 'unknown'
                 };
                 submissionsJson.push(submissionJson);
             });
 
-            // dates
-            const dates = submissionsDetails.map(submission => formatDate(submission.submissionTime));
+            // dates (only from accepted submissions)
+            const acceptedSubmissions = submissionsDetails.filter(
+                s => s.result?.status === 'accepted'
+            );
+            const dates = acceptedSubmissions.map(s => formatDate(s.submissionTime));
 
-            // solved questions
+            // solved questions (only count unique questions with accepted submissions)
             let uniqueQuestionIds = new Set();
-            submissionsDetails.forEach(submission => uniqueQuestionIds.add(submission.questionId));
+            acceptedSubmissions.forEach(s => uniqueQuestionIds.add(s.questionId));
             const solvedQuestions = uniqueQuestionIds.size;
 
             console.log(`${new Date().toLocaleString()}: Profile details fetched successfully`);
