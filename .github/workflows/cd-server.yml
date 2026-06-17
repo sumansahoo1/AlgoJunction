@@ -30,9 +30,8 @@ jobs:
             echo "==> Checking if nginx config changed..."
             NGINX_CHANGED=$(git -C "$REPO_DIR" diff --name-only "$OLD_HEAD" HEAD -- server/nginx/algojunction.conf | wc -l)
 
-            echo "==> Enabling corepack and installing dependencies..."
+            echo "==> Installing dependencies..."
             cd "$REPO_DIR/server"
-            corepack enable
             yarn install --frozen-lockfile
 
             echo "==> Building Java executor Docker image..."
