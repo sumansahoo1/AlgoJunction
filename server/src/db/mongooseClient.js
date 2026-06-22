@@ -1,10 +1,27 @@
-import { Submission, User } from "./schema/dbSchema.js";
+import mongoose from 'mongoose';
+import { Submission, User } from './schema/dbSchema.js';
+
+export class DBConnectionError extends Error {
+    constructor(message = 'Database connection is not available') {
+        super(message);
+        this.name = 'DBConnectionError';
+    }
+}
+
+function ensureConnected() {
+    const state = mongoose.connection.readyState;
+    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    if (state !== 1) {
+        const labels = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+        throw new DBConnectionError(`Database is ${labels[state] || 'unknown'}. Cannot perform operation.`);
+    }
+}
 
 export async function insertNew(userId, questionId, code, language, result, testCaseResults) {
     try {
+        ensureConnected();
         const submissionTime = new Date();
 
-        // Example: Create a new submission document
         const submission = new Submission({
             userId,
             questionId,
@@ -15,22 +32,22 @@ export async function insertNew(userId, questionId, code, language, result, test
             testCaseResults
         });
 
-        // Save the submission document
         const response = await submission.save();
         console.log(`${new Date().toLocaleString()}: Submission saved, id:`, response._id);
         return response._id;
     } catch (error) {
-        console.error('Error:', error);
-        return null;
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error saving submission:', error);
+        throw error;
     }
 }
 
 export async function addOrUpdateUser(username, email, submissionId) {
     try {
+        ensureConnected();
         let user = await User.findOne({ email });
 
         if (user) {
-
             user.username = username || user.username;
             user.email = email || user.email;
             if (submissionId) {
@@ -47,13 +64,17 @@ export async function addOrUpdateUser(username, email, submissionId) {
 
         const response = await user.save();
         console.log(`${new Date().toLocaleString()}: User saved/updated, id:`, response._id);
+        return response._id;
     } catch (error) {
-        console.error('Error:', error);
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error saving/updating user:', error);
+        throw error;
     }
 }
 
 export async function getUserByUsernameAndEmail(username, email) {
     try {
+        ensureConnected();
         let users = await User.find({ email });
 
         if (users.length === 1) {
@@ -69,19 +90,20 @@ export async function getUserByUsernameAndEmail(username, email) {
             return null;
         }
     } catch (error) {
-        console.error('Error:', error);
-        return null;
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error fetching user:', error);
+        throw error;
     }
 }
 
 export async function getSubmissionsDetails(submissionIds) {
     try {
+        ensureConnected();
         const submissions = await Submission.find({ _id: { $in: submissionIds } });
 
         if (submissions.length > 0) {
             console.log(`${new Date().toLocaleString()}: Submissions found`);
 
-            // Map the submissions array to an array of objects containing the desired details
             const submissionDetails = submissions.map(submission => ({
                 id: submission._id,
                 userId: submission.userId,
@@ -98,8 +120,8 @@ export async function getSubmissionsDetails(submissionIds) {
             return [];
         }
     } catch (error) {
-        console.error('Error:', error);
-        return null;
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error fetching submissions:', error);
+        throw error;
     }
 }
-

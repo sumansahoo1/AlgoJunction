@@ -1,5 +1,5 @@
 import formatDate from "../db/utils/formatDate.js";
-import { getSubmissionsDetails, getUserByUsernameAndEmail } from "../db/mongooseClient.js";
+import { getSubmissionsDetails, getUserByUsernameAndEmail, DBConnectionError } from "../db/mongooseClient.js";
 import { questions } from "../db/data.js";
 
 export async function getProfileDetails(req, res) {
@@ -44,6 +44,9 @@ export async function getProfileDetails(req, res) {
         }
     } catch (error) {
         console.error('Error:', error);
+        if (error instanceof DBConnectionError) {
+            return res.status(503).json({ error: 'Service temporarily unavailable. Database connection lost.' });
+        }
         res.status(500).json({ error: 'Internal server error' });
     }
 }

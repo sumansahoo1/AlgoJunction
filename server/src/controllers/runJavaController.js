@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 import { questions } from '../db/data.js';
-import { addOrUpdateUser, insertNew } from '../db/mongooseClient.js';
+import { addOrUpdateUser, insertNew, DBConnectionError } from '../db/mongooseClient.js';
 
 const executeCommand = (command) => {
     return new Promise((resolve, reject) => {
@@ -128,11 +128,16 @@ const handleDatabaseUpdates = async ({ username, quesid, javaCode, language, sta
             result
         );
 
-        // todo: add email
         await addOrUpdateUser(username, email, submission_id);
 
     } catch (error) {
-        console.log(`${new Date().toLocaleString()}: Database update failed with error: ${error}`);
-        // todo: if this then rollback and send error message as response
+        if (error instanceof DBConnectionError) {
+            console.warn(`${new Date().toLocaleString()}: Database updates skipped — DB unavailable (${error.message})`);
+            // No rollback needed — the data never reached the DB
+        } else {
+            console.error(`${new Date().toLocaleString()}: Database update failed:`, error);
+            // If insertNew succeeded but addOrUpdateUser failed, we have a partial state.
+            // TODO: implement compensation logic (delete the orphaned submission)
+        }
     }
 }
