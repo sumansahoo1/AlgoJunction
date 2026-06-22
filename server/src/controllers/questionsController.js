@@ -1,4 +1,5 @@
 import { questions } from '../db/data.js';
+import { getSolvedQuestionIds, DBConnectionError } from '../db/mongooseClient.js';
 
 export const getAllQuestions = (req, res) => {
     console.log(`${new Date().toLocaleString()}: Questions fetched`);
@@ -28,4 +29,24 @@ export const getTotalQuestions = (req, res) => {
 
 const filtertolist = () => {
     return questions.map(item => ({ id: item.id, qName: item.qName, qDifficulty: item.qDifficulty }));
+};
+
+export const getSolvedQuestionList = async (req, res) => {
+    try {
+        const username = req.user.name;
+        console.log(`${new Date().toLocaleString()}: Solved questions fetching for user:${username}`);
+
+        const solvedIds = await getSolvedQuestionIds(username);
+
+        // Convert string IDs from MongoDB to numbers to match question.id type
+        const numericSolvedIds = solvedIds.map(id => Number(id)).filter(id => !isNaN(id));
+
+        res.json({ solvedIds: numericSolvedIds });
+    } catch (error) {
+        console.error('Error:', error);
+        if (error instanceof DBConnectionError) {
+            return res.status(503).json({ error: 'Service temporarily unavailable. Database connection lost.' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };

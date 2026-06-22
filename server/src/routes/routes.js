@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { runJava } from '../controllers/runJavaController.js';
-import { getAllQuestions, getQuestionById, getQuestionList, getTotalQuestions } from '../controllers/questionsController.js';
+import { getAllQuestions, getQuestionById, getQuestionList, getTotalQuestions, getSolvedQuestionList } from '../controllers/questionsController.js';
 import { getProfileDetails } from '../controllers/profileController.js';
 import { runJavaLimiter, profileLimiter, questionsLimiter } from '../middleware/rateLimiter.js';
 import { authenticate } from '../middleware/auth.js';
@@ -23,6 +23,7 @@ router.get("/questions", questionsLimiter, getAllQuestions);
 router.get("/question/:id", questionsLimiter, getQuestionById);
 router.get("/questionlist", questionsLimiter, getQuestionList);
 router.get("/totalquestions", questionsLimiter, getTotalQuestions);
+router.get("/questions/solved", authenticate, profileLimiter, getSolvedQuestionList);
 
 // profile routes
 router.get("/profile", authenticate, profileLimiter, getProfileDetails);

@@ -18,6 +18,7 @@ const HomePage = () => {
 
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
+    const [solvedIds, setSolvedIds] = useState<Set<number>>(new Set());
 
     const navigate = useNavigate();
 
@@ -43,6 +44,30 @@ const HomePage = () => {
         fetchQuestions();
     }, []);
 
+    useEffect(() => {
+        async function fetchSolvedQuestions() {
+            const idToken = localStorage.getItem("idToken");
+            if (!idToken) return;
+
+            try {
+                const response = await axios.get(
+                    import.meta.env.VITE_BACKEND_URL + "/questions/solved",
+                    {
+                        headers: {
+                            Authorization: 'Bearer ' + idToken,
+                        },
+                    }
+                );
+                setSolvedIds(new Set(response.data.solvedIds));
+            } catch (error) {
+                if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+                    console.error('Failed to fetch solved questions:', error);
+                }
+            }
+        }
+        fetchSolvedQuestions();
+    }, []);
+
     const difficultyStyles: Record<string, string> = {
         easy: 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950',
         medium: 'text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-950',
@@ -61,6 +86,7 @@ const HomePage = () => {
                                 <TableHead className="w-16">#</TableHead>
                                 <TableHead>Title</TableHead>
                                 <TableHead className="w-28">Difficulty</TableHead>
+                                <TableHead className="w-20">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -70,11 +96,12 @@ const HomePage = () => {
                                         <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                                         <TableCell><Skeleton className="h-4 w-48" /></TableCell>
                                         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                                        <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                                     </TableRow>
                                 ))
                             ) : questions.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-slate-500 dark:text-slate-400 py-8">
+                                    <TableCell colSpan={4} className="text-center text-slate-500 dark:text-slate-400 py-8">
                                         No problems available yet.
                                     </TableCell>
                                 </TableRow>
@@ -93,6 +120,13 @@ const HomePage = () => {
                                             <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${difficultyStyles[question.qDifficulty.toLowerCase()] ?? ''}`}>
                                                 {question.qDifficulty}
                                             </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            {solvedIds.has(question.id) && (
+                                                <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950">
+                                                    Solved
+                                                </span>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))

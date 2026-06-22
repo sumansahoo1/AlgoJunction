@@ -96,6 +96,23 @@ export async function getUserByUsernameAndEmail(username, email) {
     }
 }
 
+export async function getSolvedQuestionIds(username) {
+    try {
+        ensureConnected();
+        const solvedIds = await Submission.find({
+            userId: username,
+            'result.status': 'accepted'
+        }).distinct('questionId');
+
+        console.log(`${new Date().toLocaleString()}: Solved question IDs fetched for user:${username}, count:${solvedIds.length}`);
+        return solvedIds;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error fetching solved question IDs:', error);
+        throw error;
+    }
+}
+
 export async function getSubmissionsDetails(submissionIds) {
     try {
         ensureConnected();
