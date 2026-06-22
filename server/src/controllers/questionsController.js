@@ -42,7 +42,8 @@ export const getQuestionById = async (req, res) => {
 
 export const getQuestionList = async (req, res) => {
     try {
-        const list = await getQuestionListFromDB();
+        const { search, difficulty } = req.query;
+        const list = await getQuestionListFromDB({ search, difficulty });
         console.log(`${new Date().toLocaleString()}: Question list fetched`);
         res.json(list);
     } catch (error) {

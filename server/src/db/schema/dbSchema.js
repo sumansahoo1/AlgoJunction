@@ -83,6 +83,12 @@ const questionSchema = new mongoose.Schema({
 // Create the Question model
 const Question = mongoose.model('Question', questionSchema);
 
+// Compound text index for search — enables $text queries across name and description
+questionSchema.index(
+    { qName: 'text', qDescription: 'text' },
+    { name: 'question_text_search' },
+);
+
 export { Submission, User, Question };
 
 

@@ -19,6 +19,14 @@ const seedQuestions = async () => {
             console.log(`${new Date().toLocaleString()}: Seeded question id=${doc.id} — "${doc.qName}"`);
         }
 
+        // Ensure text search index exists (schema declaration handles this
+        // on app startup, but the seed script runs standalone)
+        await Question.collection.createIndex(
+            { qName: 'text', qDescription: 'text' },
+            { name: 'question_text_search' },
+        );
+        console.log(`${new Date().toLocaleString()}: Text search index ensured`);
+
         console.log(`${new Date().toLocaleString()}: Seed complete — ${questions.length} questions migrated`);
     } catch (error) {
         console.error(`${new Date().toLocaleString()}: Seed failed —`, error);

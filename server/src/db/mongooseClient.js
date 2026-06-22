@@ -171,14 +171,42 @@ export async function getQuestionByIdFromDB(id) {
     }
 }
 
-export async function getQuestionListFromDB() {
+export async function getQuestionListFromDB({ search, difficulty } = {}) {
     try {
         ensureConnected();
-        const list = await Question.find({}, { id: 1, qName: 1, qDifficulty: 1, _id: 0 })
-            .sort({ id: 1 })
-            .lean();
-        console.log(`${new Date().toLocaleString()}: Question list fetched from DB`);
-        return list;
+        const filter = {};
+
+        // Text search across qName and qDescription (MongoDB $text)
+        if (search && search.trim()) {
+            filter.$text = { $search: search.trim() };
+        }
+
+        // Difficulty filter (comma-separated for future multi-select)
+        if (difficulty) {
+            const diffs = difficulty.split(',').map(d => d.trim())
+                .filter(d => ['Easy', 'Medium', 'Hard'].includes(d));
+            if (diffs.length > 0 && diffs.length < 3) {
+                filter.qDifficulty = { $in: diffs };
+            }
+        }
+
+        const projection = { id: 1, qName: 1, qDifficulty: 1, _id: 0 };
+        const sort = filter.$text
+            ? { score: { $meta: 'textScore' } }
+            : { id: 1 };
+
+        if (filter.$text) {
+            projection.score = { $meta: 'textScore' };
+        }
+
+        const results = await Question.find(filter, projection).sort(sort).lean();
+
+        // Strip internal score field from the response
+        // eslint-disable-next-line no-unused-vars
+        const cleaned = results.map(({ score, ...rest }) => rest);
+
+        console.log(`${new Date().toLocaleString()}: Question list fetched from DB — search="${search || ''}" difficulty="${difficulty || ''}" → ${cleaned.length} results`);
+        return cleaned;
     } catch (error) {
         if (error instanceof DBConnectionError) throw error;
         console.error('Error fetching question list:', error);
