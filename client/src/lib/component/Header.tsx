@@ -53,10 +53,7 @@ export const Header = () => {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 onClick={() => {
-                                    localStorage.removeItem("username");
-                                    localStorage.removeItem("token");
-                                    localStorage.removeItem("email");
-                                    localStorage.removeItem("photoURL");
+                                    localStorage.clear();
                                     navigate("/", { replace: true });
                                 }}
                                 className="text-red-500 focus:text-red-500"

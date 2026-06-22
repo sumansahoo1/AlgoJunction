@@ -4,6 +4,7 @@ import { runJava } from '../controllers/runJavaController.js';
 import { getAllQuestions, getQuestionById, getQuestionList, getTotalQuestions } from '../controllers/questionsController.js';
 import { getProfileDetails } from '../controllers/profileController.js';
 import { runJavaLimiter, profileLimiter, questionsLimiter } from '../middleware/rateLimiter.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ const mongooseState = {
 };
 
 // Run Java Route
-router.post('/run-java', runJavaLimiter, runJava);
+router.post('/run-java', authenticate, runJavaLimiter, runJava);
 
 // Questions Routes
 router.get("/questions", questionsLimiter, getAllQuestions);
@@ -24,7 +25,7 @@ router.get("/questionlist", questionsLimiter, getQuestionList);
 router.get("/totalquestions", questionsLimiter, getTotalQuestions);
 
 // profile routes
-router.get("/profile", profileLimiter, getProfileDetails);
+router.get("/profile", authenticate, profileLimiter, getProfileDetails);
 
 // Health Check Route
 router.get("/", (req, res) => {

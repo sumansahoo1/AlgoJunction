@@ -46,7 +46,10 @@
 
 ### 🔐 **Authentication & Social Integration**
 - Seamless Google sign-in via Firebase
-- Secure token-based authentication
+- Secure token-based authentication via Firebase ID tokens
+- Backend verifies every protected request with Firebase Admin SDK (`verifyIdToken`)
+- User identity is extracted from the server-verified token, never from client-provided fields
+- 401 responses trigger automatic sign-out on the frontend
 - No passwords needed – OAuth 2.0 integration
 
 ### 📊 **Progress Tracking & Analytics**
@@ -188,6 +191,11 @@ AlgoJunction/
 ├── server/                          # Express Backend
 │   ├── src/
 │   │   ├── index.js                 # Server entry point (port 3000)
+│   │   ├── config/
+│   │   │   └── firebaseAdmin.js     # Firebase Admin SDK initialization
+│   │   ├── middleware/
+│   │   │   ├── auth.js              # Firebase ID token verification
+│   │   │   └── rateLimiter.js       # Rate limiting middleware
 │   │   ├── routes/
 │   │   │   └── routes.js            # All API route definitions + health check
 │   │   ├── controllers/             # Business logic
@@ -315,10 +323,12 @@ Open `server/.env` and set:
 | Variable | Where to get it |
 |---|---|
 | `MONGODB_URI` | [MongoDB Atlas](https://cloud.mongodb.com) → cluster → Connect → Drivers |
+| `FIREBASE_SERVICE_ACCOUNT_BASE64` | [Firebase Console](https://console.firebase.google.com) → Project Settings → Service accounts → Generate new private key → `base64 -w0 < key.json` |
 
 **Example:**
 ```
 MONGODB_URI=mongodb+srv://username:password@cluster0.xyz.mongodb.net/algojunction?retryWrites=true&w=majority
+FIREBASE_SERVICE_ACCOUNT_BASE64=ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiLi4uIiwKICAicHJpdmF0ZV9rZXlfaWQiOiAiLi4uIiwKICAicHJpdmF0ZV9rZXkiOiAiLi4uIiwKICAiY2xpZW50X2VtYWlsIjogIi4uLiIsCiAgImNsaWVudF9pZCI6ICIuLi4iLAogICJhdXRoX3VyaSI6ICIuLi4iLAogICJ0b2tlbl91cmkiOiAiLi4uIiwKICAiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjogIi4uLiIsCiAgImNsaWVudF94NTA5X2NlcnRfdXJsIjogIi4uLiIKfQ==
 ```
 
 ### 3. Configure Environment — Frontend
@@ -472,31 +482,68 @@ All endpoints are served by the backend at the configured `VITE_BACKEND_URL`.
 | `GET` | `/questionlist` | Minimal list (id + title) for quick loading | No |
 | `GET` | `/question/:id` | Single question by ID with description | No |
 | `GET` | `/totalquestions` | Total count of available problems | No |
-| `POST` | `/run-java` | Compile and run submitted Java code in Docker | Yes |
-| `GET` | `/profile?username=&email=` | User profile with submission history and stats | No |
+| `POST` | `/run-java` | Compile and run submitted Java code in Docker | **Yes** (Bearer token) |
+| `GET` | `/profile` | User profile with submission history and stats | **Yes** (Bearer token) |
 
 ### Rate Limits
 
 | Endpoint | Limit | Layer |
 |---|---|---|
 | All | 100 req/min/IP | Express (global) |
-| `POST /run-java` | 5 req/min/IP | Express |
-| `GET /profile` | 20 req/min/IP | Express |
+| `POST /run-java` | 5 req/min/IP (after auth) | Express |
+| `GET /profile` | 20 req/min/IP (after auth) | Express |
 | `GET /questions*` | 60 req/min/IP | Express |
 | All | 30 req/s burst 20 | Nginx (reverse proxy) |
 
 When a rate limit is hit, the API responds with `429 Too Many Requests` and a JSON error body.
 
-### `POST /run-java` Request Body
+### `POST /run-java` Request
 
+**Headers:**
+```http
+Authorization: Bearer <firebase-id-token>
+Content-Type: application/json
+```
+
+**Body:**
 ```json
 {
   "quesid": "1",
-  "javaCode": "public class Solution {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }\n}",
-  "username": "john_doe",
-  "email": "john@example.com"
+  "javaCode": "public class Solution {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }\n}"
 }
 ```
+
+> `username` and `email` are no longer accepted in the request body. They are extracted server-side from the verified Firebase ID token.
+
+### Authentication
+
+Protected endpoints (`POST /run-java`, `GET /profile`) require a Firebase ID token in the `Authorization` header:
+
+```http
+Authorization: Bearer <firebase-id-token>
+```
+
+This token is obtained client-side after a successful Firebase sign-in:
+
+```js
+import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+
+const auth = getAuth();
+const result = await signInWithPopup(auth, new GoogleAuthProvider());
+const idToken = await result.user.getIdToken();
+```
+
+The backend verifies the token using the Firebase Admin SDK (`admin.auth().verifyIdToken()`) and extracts the user identity from the decoded token — never from client-provided request fields.
+
+**401 Unauthorized response (both endpoints):**
+```json
+{
+  "error": "unauthorized",
+  "message": "Missing or malformed Authorization header. Expected: Bearer <idToken>"
+}
+```
+
+The frontend clears local storage and redirects to the sign-in page when a 401 is received.
 
 ### `POST /run-java` Response
 
@@ -520,6 +567,15 @@ When a rate limit is hit, the API responds with `429 Too Many Requests` and a JS
   "executionTime": "0ms"
 }
 ```
+
+### `GET /profile` Request
+
+**Headers:**
+```http
+Authorization: Bearer <firebase-id-token>
+```
+
+> No query parameters needed. The user's identity is extracted from the verified Firebase ID token.
 
 ### `GET /profile` Response
 
@@ -553,9 +609,14 @@ When a rate limit is hit, the API responds with `429 Too Many Requests` and a JS
 
 ```env
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<db>?retryWrites=true&w=majority
+FIREBASE_SERVICE_ACCOUNT_BASE64=<base64-encoded-service-account-json>
 PORT=3000
 NODE_ENV=production
 ```
+
+> **`FIREBASE_SERVICE_ACCOUNT_BASE64`**: Base64-encoded Firebase Admin SDK service account key.
+> Generate from: Firebase Console → Project Settings → Service accounts → Generate new private key
+> Encode it: `base64 -w0 < path/to/serviceAccountKey.json`
 
 ### `client/.env`
 

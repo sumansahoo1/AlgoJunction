@@ -25,21 +25,21 @@ const ProfilePage = () => {
 
     useEffect(() => {
 
-        if (localStorage.getItem("token") == null || localStorage.getItem("username") == null || localStorage.getItem("email") == null || localStorage.getItem("photoURL") == null) {
+        if (localStorage.getItem("idToken") == null || localStorage.getItem("username") == null || localStorage.getItem("email") == null || localStorage.getItem("photoURL") == null) {
             navigate('/signin', { replace: true });
         }
 
         async function fetchQuestions() {
             try {
                 setLoading(true);
-                const queryParams = {
-                    username: localStorage.getItem("username"),
-                    email: localStorage.getItem("email"),
-                };
-
-                const url = new URL(import.meta.env.VITE_BACKEND_URL + "/profile");
-                (Object.keys(queryParams) as Array<keyof typeof queryParams>).forEach(key => url.searchParams.append(key, queryParams[key]?.toString() ?? ""));
-                const response = await axios.get(url.toString());
+                const response = await axios.get(
+                    import.meta.env.VITE_BACKEND_URL + "/profile",
+                    {
+                        headers: {
+                            Authorization: 'Bearer ' + localStorage.getItem("idToken"),
+                        },
+                    }
+                );
                 const data = response.data;
 
                 const dateCounts = data.dates.reduce((acc: { [key: string]: number }, date: string) => {
@@ -59,6 +59,9 @@ const ProfilePage = () => {
             } catch (error) {
                 if (axios.isAxiosError(error) && error.response?.status === 429) {
                     toast.error('Too many requests. Please try again later.');
+                } else if (axios.isAxiosError(error) && error.response?.status === 401) {
+                    localStorage.clear();
+                    window.location.href = '/signin';
                 } else {
                     console.log("Error fetching");
                     console.error(error);
@@ -97,10 +100,7 @@ const ProfilePage = () => {
                             <p className='text-2xl font-bold'>{JSON.parse(localStorage.getItem('username') ?? "").toString()}</p>
                             <Button variant="destructive" className="w-1/2"
                                 onClick={() => {
-                                    localStorage.removeItem("username");
-                                    localStorage.removeItem("token");
-                                    localStorage.removeItem("email");
-                                    localStorage.removeItem("photoURL");
+                                    localStorage.clear();
                                     navigate("/signin", { replace: true });
                                 }}>
                                 Logout

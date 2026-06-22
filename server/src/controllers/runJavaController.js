@@ -22,7 +22,9 @@ export const runJava = async (req, res) => {
     const result = [];
     let output = null;
 
-    const { quesid, javaCode, username, email } = req.body;
+    const { quesid, javaCode } = req.body;
+    const username = req.user.name;
+    const email = req.user.email;
     console.log(`${new Date().toLocaleString()}: Executing code for question id:${quesid} by user:${username}`);
 
     if (!javaCode) {

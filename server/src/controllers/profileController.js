@@ -4,7 +4,8 @@ import { questions } from "../db/data.js";
 
 export async function getProfileDetails(req, res) {
     try {
-        const { email, username } = req.query;
+        const username = req.user.name;
+        const email = req.user.email;
         console.log(`${new Date().toLocaleString()}: Profile details fetching for username:${username} and email:${email}`);
 
         const totalQuestions = questions.length;

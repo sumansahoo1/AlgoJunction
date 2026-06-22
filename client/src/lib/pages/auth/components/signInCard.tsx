@@ -25,11 +25,11 @@ export const SignInCard = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    const token = localStorage.getItem("token");
+    const idToken = localStorage.getItem("idToken");
     const username = localStorage.getItem("username");
     const email = localStorage.getItem("email");
     const photoURL = localStorage.getItem("photoURL");
-    if (token && username && email && photoURL) {
+    if (idToken && username && email && photoURL) {
       navigate("/", { replace: true });
     }
   }, [navigate]);
@@ -39,14 +39,13 @@ export const SignInCard = () => {
 
     const auth = getAuth();
     signInWithPopup(auth, provider)
-      .then((result) => {
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential?.accessToken;
+      .then(async (result) => {
+        const idToken = await result.user.getIdToken();
         const email = result.user?.email;
         const username = result.user?.displayName;
         const photoURL = result.user?.photoURL;
+        localStorage.setItem("idToken", idToken);
         localStorage.setItem("username", JSON.stringify(username));
-        localStorage.setItem("token", token!);
         localStorage.setItem("email", email!);
         localStorage.setItem("photoURL", photoURL!);
         navigate("/home", { replace: true });

@@ -54,7 +54,7 @@ export const Problem = () => {
     };
 
     const init = async () => {
-      if (!localStorage.getItem("token") || !localStorage.getItem("username")) {
+      if (!localStorage.getItem("idToken") || !localStorage.getItem("username")) {
         navigate("/signin", { replace: true });
         return;
       }

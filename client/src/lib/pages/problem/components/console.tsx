@@ -51,6 +51,11 @@ export const Console = ({ collapsed, onToggle }: ConsoleProps) => {
           quesid: question?.id,
           username: localStorage.getItem("username"),
           email: localStorage.getItem("email"),
+        },
+        {
+          headers: {
+            Authorization: 'Bearer ' + localStorage.getItem("idToken"),
+          },
         }
       );
 
@@ -82,6 +87,9 @@ export const Console = ({ collapsed, onToggle }: ConsoleProps) => {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 429) {
         toast.error('Too many submissions. Please wait a minute before trying again.');
+      } else if (axios.isAxiosError(error) && error.response?.status === 401) {
+        localStorage.clear();
+        window.location.href = '/signin';
       } else {
         console.error("Error running code:", error);
       }

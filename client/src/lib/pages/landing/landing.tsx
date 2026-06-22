@@ -90,7 +90,7 @@ const Landing = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (localStorage.getItem("token") != null || localStorage.getItem("username") != null || localStorage.getItem("email") != null || localStorage.getItem("photoURL") != null) {
+    if (localStorage.getItem("idToken") != null || localStorage.getItem("username") != null || localStorage.getItem("email") != null || localStorage.getItem("photoURL") != null) {
       navigate("/home");
     }
   }, [navigate]);
