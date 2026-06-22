@@ -23,7 +23,7 @@
 - [Local Development](#local-development)
 - [Deployment](#deployment)
 - [API Reference](#api-reference)
-- [Environment Variables](#environment-variables-reference)
+- [Environment Variables Reference](#environment-variables-reference)
 - [Future Enhancements & Roadmap](#future-enhancements--roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -33,9 +33,9 @@
 ## Features
 
 ### 🎯 **Comprehensive Problem Library**
-- Browse curated DSA problems across multiple difficulty levels
+- Browse curated DSA problems across multiple difficulty levels (Easy/Medium/Hard)
 - Detailed problem descriptions with constraints and example test cases
-- More problems can be added by editing `server/src/db/data.js` and restarting the server
+- Problems stored in MongoDB — add, edit, or remove via the admin API without restarting the server
 
 ### 💻 **Secure Code Execution**
 - Write and run **Java** code in a sandboxed Docker container (Eclipse Temurin 11 JDK)
@@ -44,43 +44,43 @@
 - Strict resource limits: 0.5 CPU, 512MB RAM, no network, read-only filesystem, dropped capabilities
 - Compilation and runtime error reporting with time/memory limit detection
 
-### 🔐 **Authentication & Social Integration**
+### 🔐 **Authentication & Security**
 - Seamless Google sign-in via Firebase
-- Secure token-based authentication via Firebase ID tokens
-- Backend verifies every protected request with Firebase Admin SDK (`verifyIdToken`)
-- User identity is extracted from the server-verified token, never from client-provided fields
+- **Server-side token verification**: Every protected request's Firebase ID token is verified by the backend using Firebase Admin SDK
+- User identity (uid, email, name) is extracted from the verified token — never trusted from client-provided fields
+- **Admin access control**: Question management restricted to email allowlist (`ADMIN_EMAILS`)
 - 401 responses trigger automatic sign-out on the frontend
-- No passwords needed – OAuth 2.0 integration
 
 ### 📊 **Progress Tracking & Analytics**
 - **Contribution Graph**: Visual heatmap of your submission activity (similar to GitHub)
-- **Submission History**: View all past submissions with timestamps and results
-- **Profile Dashboard**: Track your statistics and improvement over time
-- **Performance Metrics**: See which problems you've solved and failed attempts
+- **Solved Badges**: "Solved" indicator on the problem list for completed questions
+- **Submission History**: View all past submissions with timestamps, question names, and results
+- **Profile Dashboard**: Track solved count, total problems, and improvement over time
 
 ### 🎨 **Responsive & Intuitive UI**
 - **Split-Pane Editor**: Problem description, code editor, and console output in one view
 - Responsive design works seamlessly on desktop, tablet, and mobile devices
-- Dark mode and light mode support
+- Dark mode and light mode support (class-based Tailwind strategy)
 - Real-time syntax highlighting with CodeMirror 6
 
 ### ⚡ **Developer-Friendly**
-- RESTful API for easy integration
+- RESTful API with rate limiting
 - Well-documented endpoints for custom client development
-- MongoDB-based data persistence
+- MongoDB-based persistence for users, submissions, and questions
 - Redux state management for predictable application state
+- CI/CD pipeline via GitHub Actions — auto-deploy on push to main
 
 ---
 
 ## Demo & Screenshots
 
 > **📸 Add your screenshots and demo GIFs here:**
-> 
+>
 > - **Screenshot 1**: Editor Interface & Problem Description
 > - **Screenshot 2**: Submission Result with Execution Output
 > - **Screenshot 3**: User Profile & Contribution Graph
-> - **Screenshot 4**: Problem List & Filtering
-> 
+> - **Screenshot 4**: Problem List with Solved Badges
+>
 > *Leave space for images – you can add them manually*
 
 ---
@@ -90,7 +90,8 @@
 ```
 AlgoJunction/
 ├── client/               # React + TypeScript frontend  →  Vercel
-├── server/               # Node.js + Express backend    →  VM / any server
+├── server/               # Node.js + Express backend    →  Oracle VM
+├── .github/workflows/    # CI + auto-deploy pipeline
 ├── deploy-client.sh      # One-command frontend deployment
 └── deploy-server.sh      # One-command backend deployment
 ```
@@ -100,16 +101,15 @@ AlgoJunction/
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Browser (User)                          │
-│                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │  AlgoJunction Frontend (React + TypeScript)              │   │
-│  │  - Problem Browsing                                      │   │
+│  │  - Problem Browsing (with Solved badges)                 │   │
 │  │  - Code Editor (CodeMirror)                              │   │
 │  │  - Profile Dashboard                                     │   │
 │  │  - Contribution Graph                                    │   │
 │  └────────────────┬─────────────────────────────────────────┘   │
 └───────────────────┼─────────────────────────────────────────────┘
-                    │ REST API (axios)
+                    │ REST API (axios) + Bearer Token
                     │ VITE_BACKEND_URL
                     ▼
         ┌──────────────────────────┐
@@ -117,10 +117,11 @@ AlgoJunction/
          │   (Node.js + ESM)         │
         │                          │
         │  Routes:                 │
-        │  - /questions            │
+        │  - /questions (MongoDB)  │
         │  - /question/:id         │
-        │  - /run-java             │
-        │  - /profile              │
+        │  - /run-java (auth)      │
+        │  - /profile (auth)       │
+        │  - /admin/questions (admin)│
         └──────────┬───────────────┘
                    │
         ┌──────────┴────────────┐
@@ -131,7 +132,7 @@ AlgoJunction/
     │ Atlas       │        │ Container    │
     │             │        │              │
     │ - Users     │        │ - Temurin 11 │
-    │ - Problems  │        │ - Sandbox    │
+    │ - Questions │        │ - Sandbox    │
     │ - Submissions        │ - Execution  │
    └─────────────┘        └──────────────┘
 ```
@@ -142,19 +143,20 @@ AlgoJunction/
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Framer Motion |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion |
 | **Code Editor** | CodeMirror 6 with syntax highlighting for Java |
-| **Authentication** | Firebase (Google OAuth 2.0) |
+| **Authentication** | Firebase (Google OAuth 2.0) + Firebase Admin SDK (server-side verification) |
 | **State Management** | Redux Toolkit |
 | **Backend** | Node.js 18+ (ESM), Express.js |
-| **Database** | MongoDB Atlas with Mongoose ODM |
+| **Database** | MongoDB Atlas with Mongoose ODM (Users, Questions, Submissions) |
 | **Code Execution** | Docker (Eclipse Temurin 11 JDK) with sandboxed environment |
 | **Charts & Graphs** | Chart.js, React Heat Map for contribution tracking |
-| **UI Components** | Radix UI, Lucide React Icons |
-| **Frontend Hosting** | Vercel |
-| **Backend Hosting** | Linux VM (AWS, DigitalOcean, etc.) |
+| **UI Components** | shadcn/ui, Lucide React Icons |
 | **Rate Limiting** | express-rate-limit (app-level) + Nginx limit_req (reverse proxy) |
-| **Process Manager** | PM2 (optional but recommended for production) |
+| **CI/CD** | GitHub Actions (CI + auto-deploy to Oracle VM) |
+| **Frontend Hosting** | Vercel |
+| **Backend Hosting** | Oracle VM |
+| **Process Manager** | PM2 (production) |
 
 ---
 
@@ -162,6 +164,10 @@ AlgoJunction/
 
 ```
 AlgoJunction/
+│
+├── .github/workflows/
+│   ├── ci.yml                    # CI (lint, typecheck, build, smoke test)
+│   └── cd-server.yml             # Auto-deploy server to VM
 │
 ├── client/                          # React Frontend
 │   ├── src/
@@ -192,22 +198,24 @@ AlgoJunction/
 │   ├── src/
 │   │   ├── index.js                 # Server entry point (port 3000)
 │   │   ├── config/
-│   │   │   └── firebaseAdmin.js     # Firebase Admin SDK initialization
+│   │   │   └── firebaseAdmin.js     # Firebase Admin SDK (lazy init)
 │   │   ├── middleware/
 │   │   │   ├── auth.js              # Firebase ID token verification
+│   │   │   ├── adminAuth.js         # Admin email allowlist check
 │   │   │   └── rateLimiter.js       # Rate limiting middleware
 │   │   ├── routes/
 │   │   │   └── routes.js            # All API route definitions + health check
 │   │   ├── controllers/             # Business logic
 │   │   │   ├── runJavaController.js # Docker sandbox code execution
 │   │   │   ├── questionsController.js
+│   │   │   ├── questionAdminController.js
 │   │   │   └── profileController.js
 │   │   ├── db/                      # Database connection & models
-│   │   │   ├── connectDb.js         # MongoDB connection
-│   │   │   ├── data.js              # Static problem seed data
-│   │   │   ├── mongooseClient.js    # Mongoose CRUD operations
+│   │   │   ├── connectDb.js         # MongoDB connection with retry logic
+│   │   │   ├── data.js              # DEPRECATED — seed reference only
+│   │   │   ├── mongooseClient.js    # Mongoose CRUD (User, Submission, Question)
 │   │   │   ├── schema/
-│   │   │   │   └── dbSchema.js      # Mongoose schemas (User, Submission)
+│   │   │   │   └── dbSchema.js      # Mongoose schemas (User, Submission, Question)
 │   │   │   └── utils/
 │   │   │       └── formatDate.js    # Date formatter (YYYY/MM/DD)
 │   │   ├── docker/
@@ -215,7 +223,8 @@ AlgoJunction/
 │   │   ├── execute/                 # Solution.java written per execution
 │   │   ├── inputs/                  # Test input.txt written per test case
 │   │   └── scripts/
-│   │       └── dbTransactions.js    # MongoDB seed/test script
+│   │       ├── seedQuestions.js     # One-time question migration to MongoDB
+│   │       └── dbTransactions.js    # DB seeding test script
 │   ├── nginx/
 │   │   └── algojunction.conf        # Nginx reverse proxy config
 │   ├── .env.example                 # Environment template
@@ -226,6 +235,8 @@ AlgoJunction/
 ├── deploy-server.sh                 # Backend deployment script
 ├── vercel.json                      # Vercel deployment config
 ├── README.md                        # This file
+├── ARCHITECTURE.md                  # Detailed architecture
+├── AGENTS.md                        # AI agent instructions
 └── .gitignore
 ```
 
@@ -235,10 +246,10 @@ AlgoJunction/
 - **`client/src/lib/pages/`**: Route-connected page components (auth, home, landing, problem, profile, error)
 - **`client/src/lib/features/`**: Redux Toolkit slices (questions, totalques)
 - **`client/src/lib/component/`**: Shared app-level components (Header, progress)
-- **`server/routes/`**: API endpoint definitions
-- **`server/controllers/`**: Logic for handling requests
-- **`server/docker/`**: Dockerfile for the pre-built Java execution image
-- **`server/db/`**: MongoDB connection, Mongoose schemas, CRUD operations, and static problem data
+- **`server/src/controllers/`**: Business logic (questions, code execution, profile, admin CRUD)
+- **`server/src/middleware/`**: Auth verification, admin authorization, rate limiting
+- **`server/src/docker/`**: Dockerfile for the pre-built Java execution image
+- **`server/src/db/`**: MongoDB connection, Mongoose schemas, CRUD operations
 - **`server/nginx/`**: Nginx reverse proxy configuration for production
 
 ---
@@ -251,7 +262,7 @@ AlgoJunction/
 | **Yarn** | Package management | Latest |
 | **Docker** | Backend (Java code execution) | Latest |
 | **MongoDB Atlas account** | Backend database | Free tier ok |
-| **Firebase project** | Frontend authentication | Free tier ok |
+| **Firebase project** | Frontend auth + backend verification | Free tier ok |
 | **Vercel CLI** | Frontend deployment only | `npm i -g vercel` |
 | **PM2** | Backend production (optional) | `npm i -g pm2` |
 
@@ -273,7 +284,7 @@ cd AlgoJunction
 **Backend:**
 ```bash
 cp server/.env.example server/.env
-# Edit server/.env and add your MongoDB URI
+# Edit server/.env and add your MongoDB URI, Firebase service account, and admin emails
 ```
 
 **Frontend:**
@@ -298,7 +309,13 @@ yarn install
 yarn dev
 ```
 
-#### 4. Open in Browser
+#### 4. Seed Questions (first time only)
+```bash
+cd server
+node src/scripts/seedQuestions.js
+```
+
+#### 5. Open in Browser
 Navigate to [http://localhost:5173](http://localhost:5173)
 
 ---
@@ -324,11 +341,13 @@ Open `server/.env` and set:
 |---|---|
 | `MONGODB_URI` | [MongoDB Atlas](https://cloud.mongodb.com) → cluster → Connect → Drivers |
 | `FIREBASE_SERVICE_ACCOUNT_BASE64` | [Firebase Console](https://console.firebase.google.com) → Project Settings → Service accounts → Generate new private key → `base64 -w0 < key.json` |
+| `ADMIN_EMAILS` | Comma-separated Google account emails for admin access (e.g., `you@gmail.com`) |
 
 **Example:**
 ```
 MONGODB_URI=mongodb+srv://username:password@cluster0.xyz.mongodb.net/algojunction?retryWrites=true&w=majority
-FIREBASE_SERVICE_ACCOUNT_BASE64=ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiLi4uIiwKICAicHJpdmF0ZV9rZXlfaWQiOiAiLi4uIiwKICAicHJpdmF0ZV9rZXkiOiAiLi4uIiwKICAiY2xpZW50X2VtYWlsIjogIi4uLiIsCiAgImNsaWVudF9pZCI6ICIuLi4iLAogICJhdXRoX3VyaSI6ICIuLi4iLAogICJ0b2tlbl91cmkiOiAiLi4uIiwKICAiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjogIi4uLiIsCiAgImNsaWVudF94NTA5X2NlcnRfdXJsIjogIi4uLiIKfQ==
+FIREBASE_SERVICE_ACCOUNT_BASE64=ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiLi4uIiwKICAuLi4KfQ==
+ADMIN_EMAILS=you@gmail.com
 ```
 
 ### 3. Configure Environment — Frontend
@@ -348,14 +367,6 @@ Open `client/.env` and set:
 | `VITE_FIREBASE_STORAGE_BUCKET` | same |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | same |
 | `VITE_FIREBASE_APP_ID` | same |
-
-**Example:**
-```
-VITE_BACKEND_URL=http://localhost:3000
-VITE_FIREBASE_API_KEY=AIzaSyDxxx...
-VITE_FIREBASE_AUTH_DOMAIN=algojunction.firebaseapp.com
-# ... etc
-```
 
 ### 4. Start the Backend
 
@@ -379,20 +390,27 @@ yarn install
 yarn dev            # Vite dev server with HMR, port 5173
 ```
 
-**Expected output:**
-```
-VITE v5.0.8  ready in XXX ms
-
-➜  Local:   http://localhost:5173/
-```
-
 Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### 6. Seed Questions (first time)
+
+```bash
+cd server
+node src/scripts/seedQuestions.js
+```
+
+This is a one-time step that migrates the 4 starter problems into MongoDB. The script is idempotent — safe to re-run.
 
 ---
 
 ## Deployment
 
-Both deployment scripts are located at the repository root.
+### CI/CD Pipeline
+
+The project uses GitHub Actions for automated CI and deployment:
+
+- **CI** (`.github/workflows/ci.yml`): Runs on every push and PR to `main`. Checks client build, server lint, import resolution, and Docker image build.
+- **CD** (`.github/workflows/cd-server.yml`): Auto-deploys the server to the Oracle VM after CI passes on `main`. Also supports manual trigger via `workflow_dispatch`.
 
 ### Deploy Frontend → Vercel
 
@@ -412,9 +430,6 @@ Both deployment scripts are located at the repository root.
 - Add all `VITE_*` environment variables in Vercel Dashboard → Project → Settings → Environment Variables
 - Set **Root Directory** to `client` in Vercel project settings
 
-**Result:**
-- Frontend URL: `https://algojunction.vercel.app` (or your custom domain)
-
 ### Deploy Backend → VM / Server
 
 ```bash
@@ -423,21 +438,19 @@ Both deployment scripts are located at the repository root.
 
 **What it does:**
 1. Checks Docker is installed
-2. Checks that `server/.env` exists
-3. Runs `yarn install --frozen-lockfile`
-4. Starts with **PM2** if installed (process name: `algojunction-server`), otherwise falls back to `node src/index.js`
+2. Pre-builds the Java executor Docker image
+3. Checks that `server/.env` exists
+4. Runs `yarn install --frozen-lockfile`
+5. Starts with **PM2** if installed (process name: `algojunction-server`), otherwise falls back to `node src/index.js`
 
-**Recommended VM Setup (e.g., DigitalOcean, AWS EC2, Linode):**
+**Recommended VM Setup:**
 
 ```bash
 # On your VM, run:
 sudo apt update && sudo apt install -y nodejs npm docker.io
 
-# Install Yarn
-npm i -g yarn
-
-# Install PM2 (recommended)
-npm i -g pm2
+# Install Yarn & PM2
+npm i -g yarn pm2
 
 # Clone the repo
 git clone https://github.com/sumansahoo1/AlgoJunction.git
@@ -445,15 +458,23 @@ cd AlgoJunction
 
 # Set up environment
 cp server/.env.example server/.env
-# Edit server/.env with production MongoDB URI
+# Edit server/.env with:
+#   - MONGODB_URI (production)
+#   - FIREBASE_SERVICE_ACCOUNT_BASE64 (base64-encoded service account key)
+#   - ADMIN_EMAILS (your Google email)
 nano server/.env
 
 # Deploy
 ./deploy-server.sh
 
+# One-time: seed questions into MongoDB
+cd server && node src/scripts/seedQuestions.js
+
 # Start PM2 on system boot (optional)
 pm2 startup
 pm2 save
+
+# Set up Nginx (see server/nginx/algojunction.conf)
 ```
 
 **View Logs:**
@@ -477,13 +498,17 @@ All endpoints are served by the backend at the configured `VITE_BACKEND_URL`.
 
 | Method | Route | Description | Auth Required |
 |---|---|---|---|
-| `GET` | `/` | Health check | No |
+| `GET` | `/` | Health check (MongoDB + server) | No |
 | `GET` | `/questions` | Full question list with details and boilerplate | No |
-| `GET` | `/questionlist` | Minimal list (id + title) for quick loading | No |
+| `GET` | `/questionlist` | Minimal list (id + title + difficulty) | No |
 | `GET` | `/question/:id` | Single question by ID with description | No |
 | `GET` | `/totalquestions` | Total count of available problems | No |
-| `POST` | `/run-java` | Compile and run submitted Java code in Docker | **Yes** (Bearer token) |
-| `GET` | `/profile` | User profile with submission history and stats | **Yes** (Bearer token) |
+| `GET` | `/questions/solved` | Solved question IDs for current user | **Yes** |
+| `POST` | `/run-java` | Compile and run submitted Java code in Docker | **Yes** |
+| `GET` | `/profile` | User profile with submission history and stats | **Yes** |
+| `POST` | `/admin/questions` | Create a new question | **Yes + Admin** |
+| `PUT` | `/admin/question/:id` | Update an existing question | **Yes + Admin** |
+| `DELETE` | `/admin/question/:id` | Delete a question | **Yes + Admin** |
 
 ### Rate Limits
 
@@ -497,33 +522,15 @@ All endpoints are served by the backend at the configured `VITE_BACKEND_URL`.
 
 When a rate limit is hit, the API responds with `429 Too Many Requests` and a JSON error body.
 
-### `POST /run-java` Request
-
-**Headers:**
-```http
-Authorization: Bearer <firebase-id-token>
-Content-Type: application/json
-```
-
-**Body:**
-```json
-{
-  "quesid": "1",
-  "javaCode": "public class Solution {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }\n}"
-}
-```
-
-> `username` and `email` are no longer accepted in the request body. They are extracted server-side from the verified Firebase ID token.
-
 ### Authentication
 
-Protected endpoints (`POST /run-java`, `GET /profile`) require a Firebase ID token in the `Authorization` header:
+Protected endpoints (`POST /run-java`, `GET /profile`, `GET /questions/solved`, admin routes) require a Firebase ID token in the `Authorization` header:
 
 ```http
 Authorization: Bearer <firebase-id-token>
 ```
 
-This token is obtained client-side after a successful Firebase sign-in:
+The token is obtained client-side after a successful Firebase sign-in:
 
 ```js
 import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -535,7 +542,7 @@ const idToken = await result.user.getIdToken();
 
 The backend verifies the token using the Firebase Admin SDK (`admin.auth().verifyIdToken()`) and extracts the user identity from the decoded token — never from client-provided request fields.
 
-**401 Unauthorized response (both endpoints):**
+**401 Unauthorized response:**
 ```json
 {
   "error": "unauthorized",
@@ -545,61 +552,86 @@ The backend verifies the token using the Firebase Admin SDK (`admin.auth().verif
 
 The frontend clears local storage and redirects to the sign-in page when a 401 is received.
 
-### `POST /run-java` Response
-
-**Success (200):**
-```json
-{
-  "success": true,
-  "output": "Output from code execution",
-  "error": null,
-  "executionTime": "145ms",
-  "submissionId": "507f1f77bcf86cd799439011"
-}
-```
-
-**Error (400):**
-```json
-{
-  "success": false,
-  "output": "",
-  "error": "Compilation error: ...",
-  "executionTime": "0ms"
-}
-```
-
-### `GET /profile` Request
+### `POST /run-java` Request
 
 **Headers:**
 ```http
 Authorization: Bearer <firebase-id-token>
+Content-Type: application/json
 ```
 
-> No query parameters needed. The user's identity is extracted from the verified Firebase ID token.
+**Body:**
+```json
+{
+  "quesid": 1,
+  "javaCode": "public class Solution {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }\n}"
+}
+```
+
+> `username` and `email` are no longer accepted in the request body. They are extracted server-side from the verified Firebase ID token.
+
+### `POST /run-java` Response
+
+Returns an array of test case results:
+```json
+[
+  {
+    "index": 0,
+    "output": "[0, 1]",
+    "expectedOutput": "[0, 1]",
+    "error": null,
+    "success": true
+  },
+  {
+    "index": 1,
+    "output": null,
+    "expectedOutput": "[1, 2]",
+    "error": "Time Limit Exceeded",
+    "success": false
+  }
+]
+```
 
 ### `GET /profile` Response
 
 ```json
 {
-  "username": "john_doe",
-  "email": "john@example.com",
-  "totalSubmissions": 42,
-  "solvedProblems": 18,
+  "dates": ["2025/04/15", "2025/04/14"],
+  "totalques": 4,
+  "solvedques": 2,
   "submissions": [
     {
-      "problemId": "1",
-      "problemTitle": "Two Sum",
-      "status": "accepted",
-      "submittedAt": "2025-04-15T10:30:00Z",
-      "executionTime": "125ms"
+      "submissionTime": "2025-04-15T10:30:00.000Z",
+      "quesName": "Two Sum",
+      "status": "accepted"
     }
-  ],
-  "contributionGraph": [
-    { "date": "2025-04-15", "count": 2 },
-    { "date": "2025-04-14", "count": 1 }
   ]
 }
 ```
+
+### Admin Routes
+
+**Create a question** (`POST /admin/questions`):
+```json
+{
+  "qName": "Reverse Linked List",
+  "qDifficulty": "Easy",
+  "qDescription": "Given the head of a singly linked list, reverse the list...",
+  "qAssumptions": "The list may be empty.",
+  "examples": [{ "input": "head = [1,2,3,4,5]", "output": "[5,4,3,2,1]" }],
+  "inputs": [{ "input": "5\n1 2 3 4 5", "expectedOutput": "[5, 4, 3, 2, 1]" }],
+  "constraints": "0 <= list length <= 5000",
+  "code": "import java.util.*;\nimport java.io.*;\n\nclass Solution {\n    ...\n}"
+}
+```
+
+If `id` is omitted, it is auto-assigned as `(max existing id) + 1`.
+
+**Update a question** (`PUT /admin/question/:id`):
+Send a partial question object. The `id` field is ignored in updates.
+
+**Delete a question** (`DELETE /admin/question/:id`):
+Returns `{ "message": "Question \"Two Sum\" (id: 1) deleted successfully" }`.
 
 ---
 
@@ -610,13 +642,20 @@ Authorization: Bearer <firebase-id-token>
 ```env
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<db>?retryWrites=true&w=majority
 FIREBASE_SERVICE_ACCOUNT_BASE64=<base64-encoded-service-account-json>
+ADMIN_EMAILS=admin@example.com,another@example.com
 PORT=3000
 NODE_ENV=production
 ```
 
-> **`FIREBASE_SERVICE_ACCOUNT_BASE64`**: Base64-encoded Firebase Admin SDK service account key.
-> Generate from: Firebase Console → Project Settings → Service accounts → Generate new private key
-> Encode it: `base64 -w0 < path/to/serviceAccountKey.json`
+| Variable | Required | Purpose |
+|---|---|---|
+| `MONGODB_URI` | Yes | MongoDB Atlas connection string |
+| `FIREBASE_SERVICE_ACCOUNT_BASE64` | Yes | Base64-encoded Firebase Admin SDK private key (for server-side token verification) |
+| `ADMIN_EMAILS` | For admin routes | Comma-separated list of Google account emails allowed to manage questions |
+| `PORT` | No | Server port (default: 3000) |
+| `NODE_ENV` | No | Environment (`production` or `development`) |
+
+> **`FIREBASE_SERVICE_ACCOUNT_BASE64`**: Generate from Firebase Console → Project Settings → Service accounts → Generate new private key. Encode it: `base64 -w0 < path/to/serviceAccountKey.json`
 
 ### `client/.env`
 
@@ -640,19 +679,19 @@ Neither file is committed to the repository for security reasons. Use `.env.exam
 
 | Metric | Value |
 |---|---|
-| **Total Problems** | 4 DSA problems (expandable via data.js) |
+| **Total Problems** | 4 DSA problems (expandable via admin API) |
 | **Supported Languages** | Java (C++, Python planned) |
 | **Average Execution Time** | < 200ms per test case |
 | **Database Response Time** | < 50ms |
 | **Code Editor Load Time** | < 1.5s |
-| **Deployment Time** | Frontend: 2-5 min, Backend: 3-10 min |
+| **Deployment Time** | Frontend: 2-5 min, Backend: auto via CD (~2 min) |
 | **Monthly Active Users** | Tracking enabled via Firebase |
 
 ### Infrastructure
 
 - **Frontend**: Deployed on Vercel (CDN-enabled, global edge locations)
-- **Backend**: Linux VM with Docker for isolated execution
-- **Database**: MongoDB Atlas (multi-region support)
+- **Backend**: Oracle VM with Docker for isolated execution
+- **Database**: MongoDB Atlas (multi-region support) — 3 collections: users, submissions, questions
 - **Code Execution**: Pre-built Docker image (Eclipse Temurin 11) with per-test-case volume mounts, 10s timeout
 
 ---
@@ -660,25 +699,27 @@ Neither file is committed to the repository for security reasons. Use `.env.exam
 ## Future Enhancements & Roadmap
 
 ### Phase 2 (Q2 2026)
-- [ ] **Support for C++ and Python** - Add CodeMirror language packs and Docker images
-- [ ] **Problem Difficulty Filter** - Filter by Easy/Medium/Hard
-- [ ] **Topic-Based Categories** - Browse by Arrays, Trees, Graphs, DP, etc.
-- [ ] **Leaderboard** - Rank users by problems solved and submission speed
-- [ ] **Discussion Forum** - Per-problem discussions and hints
+- [ ] **Token refresh handling** — Add `onIdTokenChanged` listener to prevent 1-hour expiry sign-outs
+- [ ] **Support for C++ and Python** — Add CodeMirror language packs and Docker images
+- [ ] **Problem Difficulty Filter** — Filter by Easy/Medium/Hard
+- [ ] **Topic-Based Categories** — Browse by Arrays, Trees, Graphs, DP, etc.
+- [ ] **Leaderboard** — Rank users by problems solved and submission speed
 
 ### Phase 3 (Q3 2026)
-- [ ] **Test Case Customization** - Users can add custom test cases
-- [ ] **Code Template Library** - Starter templates for common patterns
-- [ ] **Achievements & Badges** - Gamification (7-day streak, 100 problems solved, etc.)
-- [ ] **Estimated Time Complexity** - AI-powered suggestions for optimization
-- [ ] **Mobile App** - React Native version for iOS/Android
+- [ ] **Admin UI** — Frontend panel for managing questions (currently API-only)
+- [ ] **Test Case Customization** — Users can add custom test cases
+- [ ] **Code Template Library** — Starter templates for common patterns
+- [ ] **Achievements & Badges** — Gamification (7-day streak, 100 problems solved, etc.)
+- [ ] **Mobile App** — React Native version for iOS/Android
 
 ### Phase 4 (Q4 2026)
-- [ ] **Team Competitions** - Collaborative contests
-- [ ] **Mock Interviews** - Timed challenges with randomized problems
-- [ ] **Problem Suggestions** - ML-based recommendations based on user history
-- [x] **API Rate Limiting & Quotas** — express-rate-limit (app) + Nginx limit_req (reverse proxy)
-- [ ] **Advanced Analytics** - Detailed performance breakdown
+- [x] ~~**Questions in MongoDB**~~ — Done (June 2026)
+- [x] ~~**Server-side auth verification**~~ — Done (June 2026)
+- [x] ~~**API Rate Limiting**~~ — Done (June 2026)
+- [x] ~~**CI/CD Pipeline**~~ — Done (June 2026)
+- [ ] **Team Competitions** — Collaborative contests
+- [ ] **Mock Interviews** — Timed challenges with randomized problems
+- [ ] **Advanced Analytics** — Detailed performance breakdown
 
 ---
 
@@ -696,10 +737,10 @@ We welcome contributions! Here's how to get started:
 ### Contribution Guidelines
 
 - Follow the existing code style (TypeScript/JavaScript conventions)
-- Write clear, descriptive commit messages
+- Write clear, descriptive commit messages ([Conventional Commits](https://www.conventionalcommits.org/))
 - Test your changes locally before submitting a PR
 - Update documentation if you change functionality
-- Ensure no console errors or warnings in your changes
+- Ensure lint passes (`yarn lint` in both `client/` and `server/`)
 
 ### Report Issues
 
@@ -716,15 +757,6 @@ Found a bug? Open an issue with:
 
 This project is licensed under the **MIT License** – see the [LICENSE](./LICENSE) file for details.
 
-### What you can do:
-✅ Use this project for personal projects  
-✅ Modify and distribute derivatives  
-✅ Use commercially  
-
-### What you must do:
-⚠️ Include a copy of the license  
-⚠️ State significant changes  
-
 ---
 
 ## Support & Contact
@@ -738,13 +770,13 @@ This project is licensed under the **MIT License** – see the [LICENSE](./LICEN
 
 ## Acknowledgments
 
-- **CodeMirror** - Powerful code editor
-- **Firebase** - Authentication and backend services
-- **MongoDB** - NoSQL database
-- **Docker** - Containerization and sandboxing
-- **Vercel** - Frontend hosting platform
-- **Radix UI** - Accessible component library
-- **React** & **TypeScript** - Frontend framework and type safety
+- **CodeMirror** — Powerful code editor
+- **Firebase** — Authentication and backend services
+- **MongoDB** — NoSQL database
+- **Docker** — Containerization and sandboxing
+- **Vercel** — Frontend hosting platform
+- **shadcn/ui** — Accessible component library
+- **React** & **TypeScript** — Frontend framework and type safety
 
 ---
 
