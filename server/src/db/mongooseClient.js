@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Submission, User } from './schema/dbSchema.js';
+import { Submission, User, Question } from './schema/dbSchema.js';
 
 export class DBConnectionError extends Error {
     constructor(message = 'Database connection is not available') {
@@ -139,6 +139,142 @@ export async function getSubmissionsDetails(submissionIds) {
     } catch (error) {
         if (error instanceof DBConnectionError) throw error;
         console.error('Error fetching submissions:', error);
+        throw error;
+    }
+}
+
+// ── Question read operations ──────────────────────────────────────────
+
+export async function getAllQuestionsFromDB() {
+    try {
+        ensureConnected();
+        const questions = await Question.find().sort({ id: 1 });
+        console.log(`${new Date().toLocaleString()}: All questions fetched from DB`);
+        return questions;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error fetching all questions:', error);
+        throw error;
+    }
+}
+
+export async function getQuestionByIdFromDB(id) {
+    try {
+        ensureConnected();
+        const question = await Question.findOne({ id: Number(id) });
+        console.log(`${new Date().toLocaleString()}: Question fetched from DB for id:${id}`);
+        return question;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error(`Error fetching question id=${id}:`, error);
+        throw error;
+    }
+}
+
+export async function getQuestionListFromDB() {
+    try {
+        ensureConnected();
+        const list = await Question.find({}, { id: 1, qName: 1, qDifficulty: 1, _id: 0 })
+            .sort({ id: 1 })
+            .lean();
+        console.log(`${new Date().toLocaleString()}: Question list fetched from DB`);
+        return list;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error fetching question list:', error);
+        throw error;
+    }
+}
+
+export async function getTotalQuestionsCountFromDB() {
+    try {
+        ensureConnected();
+        const count = await Question.countDocuments();
+        console.log(`${new Date().toLocaleString()}: Total questions count from DB: ${count}`);
+        return count;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error('Error counting questions:', error);
+        throw error;
+    }
+}
+
+export async function getQuestionNameById(id) {
+    try {
+        ensureConnected();
+        const question = await Question.findOne({ id: Number(id) }, { qName: 1, _id: 0 }).lean();
+        return question;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error(`Error fetching question name for id=${id}:`, error);
+        throw error;
+    }
+}
+
+// ── Question write operations (admin) ─────────────────────────────────
+
+export async function createQuestionInDB(questionData) {
+    try {
+        ensureConnected();
+
+        // Auto-assign id if not provided
+        if (!questionData.id) {
+            const lastQuestion = await Question.findOne().sort({ id: -1 }).lean();
+            questionData.id = lastQuestion ? lastQuestion.id + 1 : 1;
+        }
+
+        const question = new Question(questionData);
+        const saved = await question.save();
+        console.log(`${new Date().toLocaleString()}: Question created in DB, id: ${saved.id}`);
+        return saved.toJSON();
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        if (error.code === 11000) {
+            // Duplicate key error
+            const dupError = new Error(`Question with id ${questionData.id} already exists`);
+            dupError.name = 'DuplicateQuestionError';
+            throw dupError;
+        }
+        console.error('Error creating question:', error);
+        throw error;
+    }
+}
+
+export async function updateQuestionInDB(id, updateData) {
+    try {
+        ensureConnected();
+        // Prevent changing the id field — work on a copy
+        const safeUpdateData = { ...updateData };
+        delete safeUpdateData.id;
+        const updated = await Question.findOneAndUpdate(
+            { id: Number(id) },
+            safeUpdateData,
+            { new: true, runValidators: true },
+        );
+        if (updated) {
+            console.log(`${new Date().toLocaleString()}: Question updated in DB, id: ${id}`);
+            return updated.toJSON();
+        }
+        return null;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error(`Error updating question id=${id}:`, error);
+        throw error;
+    }
+}
+
+export async function deleteQuestionFromDB(id) {
+    try {
+        ensureConnected();
+        const deleted = await Question.findOneAndDelete({ id: Number(id) });
+        if (deleted) {
+            console.log(`${new Date().toLocaleString()}: Question deleted from DB, id: ${id}`);
+            return deleted.toJSON();
+        }
+        return null;
+    } catch (error) {
+        if (error instanceof DBConnectionError) throw error;
+        console.error(`Error deleting question id=${id}:`, error);
         throw error;
     }
 }

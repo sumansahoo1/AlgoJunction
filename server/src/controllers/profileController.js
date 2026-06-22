@@ -1,6 +1,5 @@
 import formatDate from "../db/utils/formatDate.js";
-import { getSubmissionsDetails, getUserByUsernameAndEmail, DBConnectionError } from "../db/mongooseClient.js";
-import { questions } from "../db/data.js";
+import { getSubmissionsDetails, getUserByUsernameAndEmail, getTotalQuestionsCountFromDB, getQuestionNameById, DBConnectionError } from "../db/mongooseClient.js";
 
 export async function getProfileDetails(req, res) {
     try {
@@ -8,22 +7,25 @@ export async function getProfileDetails(req, res) {
         const email = req.user.email;
         console.log(`${new Date().toLocaleString()}: Profile details fetching for username:${username} and email:${email}`);
 
-        const totalQuestions = questions.length;
+        const totalQuestions = await getTotalQuestionsCountFromDB();
         let submissionsJson = [];
         let user = await getUserByUsernameAndEmail(username, email);
 
         if (user) {
             const submissionsDetails = await getSubmissionsDetails(user.submissions);
 
-            // submissions
-            submissionsDetails.forEach(submission => {
-                let submissionJson = {
-                    submissionTime: submission.submissionTime,
-                    quesName: questions.find(question => question.id === Number(submission.questionId)).qName,
-                    status: submission.result?.status ?? 'unknown'
-                };
-                submissionsJson.push(submissionJson);
-            });
+            // Resolve question names in parallel
+            const submissionsWithNames = await Promise.all(
+                submissionsDetails.map(async (submission) => {
+                    const questionDoc = await getQuestionNameById(submission.questionId);
+                    return {
+                        submissionTime: submission.submissionTime,
+                        quesName: questionDoc?.qName ?? 'Unknown',
+                        status: submission.result?.status ?? 'unknown',
+                    };
+                }),
+            );
+            submissionsJson = submissionsWithNames;
 
             // dates (only from accepted submissions)
             const acceptedSubmissions = submissionsDetails.filter(
@@ -50,4 +52,3 @@ export async function getProfileDetails(req, res) {
         res.status(500).json({ error: 'Internal server error' });
     }
 }
-

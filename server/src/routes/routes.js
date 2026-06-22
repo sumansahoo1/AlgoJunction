@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { runJava } from '../controllers/runJavaController.js';
 import { getAllQuestions, getQuestionById, getQuestionList, getTotalQuestions, getSolvedQuestionList } from '../controllers/questionsController.js';
 import { getProfileDetails } from '../controllers/profileController.js';
+import { createQuestion, updateQuestion, deleteQuestion } from '../controllers/questionAdminController.js';
+import { requireAdmin } from '../middleware/adminAuth.js';
 import { runJavaLimiter, profileLimiter, questionsLimiter } from '../middleware/rateLimiter.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -27,6 +29,11 @@ router.get("/questions/solved", authenticate, profileLimiter, getSolvedQuestionL
 
 // profile routes
 router.get("/profile", authenticate, profileLimiter, getProfileDetails);
+
+// Admin question management routes
+router.post("/admin/questions", authenticate, requireAdmin, questionsLimiter, createQuestion);
+router.put("/admin/question/:id", authenticate, requireAdmin, questionsLimiter, updateQuestion);
+router.delete("/admin/question/:id", authenticate, requireAdmin, questionsLimiter, deleteQuestion);
 
 // Health Check Route
 router.get("/", (req, res) => {

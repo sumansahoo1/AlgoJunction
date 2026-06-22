@@ -1,34 +1,71 @@
-import { questions } from '../db/data.js';
-import { getSolvedQuestionIds, DBConnectionError } from '../db/mongooseClient.js';
+import {
+    getAllQuestionsFromDB,
+    getQuestionByIdFromDB,
+    getQuestionListFromDB,
+    getTotalQuestionsCountFromDB,
+    getSolvedQuestionIds,
+    DBConnectionError,
+} from '../db/mongooseClient.js';
 
-export const getAllQuestions = (req, res) => {
-    console.log(`${new Date().toLocaleString()}: Questions fetched`);
-    res.json(questions);
-};
-
-export const getQuestionById = (req, res) => {
-    const { id } = req.params;
-    console.log(`${new Date().toLocaleString()}: Question fetched for id:${id}`);
-
-    const question = questions.find((item) => item.id == id);
-    if (!question) {
-        return res.status(404).json({ error: 'Question not found' });
+export const getAllQuestions = async (req, res) => {
+    try {
+        const questions = await getAllQuestionsFromDB();
+        console.log(`${new Date().toLocaleString()}: Questions fetched`);
+        res.json(questions);
+    } catch (error) {
+        console.error('Error fetching all questions:', error);
+        if (error instanceof DBConnectionError) {
+            return res.status(503).json({ error: 'Service temporarily unavailable. Database connection lost.' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
     }
-    res.json(question);
 };
 
-export const getQuestionList = (req, res) => {
-    console.log(`${new Date().toLocaleString()}: Question list fetched`);
-    res.json(filtertolist(questions));
+export const getQuestionById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(`${new Date().toLocaleString()}: Question fetched for id:${id}`);
+
+        const question = await getQuestionByIdFromDB(id);
+        if (!question) {
+            return res.status(404).json({ error: 'Question not found' });
+        }
+        res.json(question);
+    } catch (error) {
+        console.error(`Error fetching question id=${req.params.id}:`, error);
+        if (error instanceof DBConnectionError) {
+            return res.status(503).json({ error: 'Service temporarily unavailable. Database connection lost.' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
-export const getTotalQuestions = (req, res) => {
-    console.log(`${new Date().toLocaleString()}: Total questions fetched`);
-    res.json({ total: questions.length });
+export const getQuestionList = async (req, res) => {
+    try {
+        const list = await getQuestionListFromDB();
+        console.log(`${new Date().toLocaleString()}: Question list fetched`);
+        res.json(list);
+    } catch (error) {
+        console.error('Error fetching question list:', error);
+        if (error instanceof DBConnectionError) {
+            return res.status(503).json({ error: 'Service temporarily unavailable. Database connection lost.' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
-const filtertolist = () => {
-    return questions.map(item => ({ id: item.id, qName: item.qName, qDifficulty: item.qDifficulty }));
+export const getTotalQuestions = async (req, res) => {
+    try {
+        const count = await getTotalQuestionsCountFromDB();
+        console.log(`${new Date().toLocaleString()}: Total questions fetched`);
+        res.json({ total: count });
+    } catch (error) {
+        console.error('Error fetching total questions:', error);
+        if (error instanceof DBConnectionError) {
+            return res.status(503).json({ error: 'Service temporarily unavailable. Database connection lost.' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
 export const getSolvedQuestionList = async (req, res) => {

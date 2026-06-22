@@ -48,7 +48,41 @@ userSchema.pre('save', function (next) {
 // Create the User model
 const User = mongoose.model('User', userSchema);
 
+// Define the question schema
+const questionSchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    qName: { type: String, required: true },
+    qDifficulty: { type: String, required: true, enum: ['Easy', 'Medium', 'Hard'] },
+    qDescription: { type: String, required: true },
+    qAssumptions: { type: String, default: '' },
+    examples: [
+        {
+            input: { type: String },
+            output: { type: String },
+        },
+    ],
+    inputs: [
+        {
+            input: { type: String },
+            expectedOutput: { type: String },
+        },
+    ],
+    constraints: { type: String, default: '' },
+    code: { type: String, required: true },
+}, {
+    timestamps: true,
+    toJSON: {
+        transform(doc, ret) {
+            delete ret._id;
+            delete ret.__v;
+            return ret;
+        },
+    },
+});
 
-export { Submission, User };
+// Create the Question model
+const Question = mongoose.model('Question', questionSchema);
+
+export { Submission, User, Question };
 
 

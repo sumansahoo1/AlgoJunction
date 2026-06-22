@@ -1,3 +1,7 @@
+// DEPRECATED: Questions are now stored in MongoDB (Question model).
+// This file is retained only as the data source for the one-time seed script
+// (scripts/seedQuestions.js). Do not add new questions here — use the admin
+// API (POST /admin/questions) or MongoDB Atlas UI instead.
 export const questions = [
   {
     id: 1,
