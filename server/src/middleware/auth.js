@@ -1,4 +1,4 @@
-import admin from '../config/firebaseAdmin.js';
+import getAdmin from '../config/firebaseAdmin.js';
 
 export async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -14,6 +14,7 @@ export async function authenticate(req, res, next) {
   }
 
   try {
+    const admin = getAdmin(); // lazy init — first call validates env var and initializes SDK
     const decoded = await admin.auth().verifyIdToken(idToken);
     req.user = {
       uid: decoded.uid,
