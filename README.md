@@ -72,19 +72,6 @@
 
 ---
 
-## Demo & Screenshots
-
-> **📸 Add your screenshots and demo GIFs here:**
->
-> - **Screenshot 1**: Editor Interface & Problem Description
-> - **Screenshot 2**: Submission Result with Execution Output
-> - **Screenshot 3**: User Profile & Contribution Graph
-> - **Screenshot 4**: Problem List with Solved Badges
->
-> *Leave space for images – you can add them manually*
-
----
-
 ## Architecture
 
 ```
