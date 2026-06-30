@@ -14,7 +14,6 @@
 ## Table of Contents
 
 - [Features](#features)
-- [Demo & Screenshots](#demo--screenshots)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
