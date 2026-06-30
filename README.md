@@ -748,7 +748,7 @@ This project is licensed under the **MIT License** – see the [LICENSE](./LICEN
 ## Support & Contact
 
 - 🌐 **Live Website**: [algojunction.sumansahoo.com](https://algojunction.sumansahoo.com)
-- 📧 **Email**: [contact@sumansahoo.com](mailto:contact@sumansahoo.com)
+- 📧 **Email**: [suman@sumansahoo.com](mailto:suman@sumansahoo.com)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/sumansahoo1/AlgoJunction/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/sumansahoo1/AlgoJunction/discussions)
 
