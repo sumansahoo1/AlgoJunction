@@ -4,7 +4,7 @@
 
 **Live:** [algojunction.sumansahoo.com](https://algojunction.sumansahoo.com)
 
-![Build Status](https://img.shields.io/badge/status-down-red)
+![Build Status](https://img.shields.io/badge/status-active-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Node Version](https://img.shields.io/badge/node-%3E%3D18-green)
 ![Language](https://img.shields.io/badge/language-TypeScript-blue)
